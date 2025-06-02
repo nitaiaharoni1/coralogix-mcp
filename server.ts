@@ -57,7 +57,9 @@ async function main(): Promise<void> {
     
     if (missingVars.length > 0) {
       console.error('ERROR: Missing required environment variables:', missingVars.join(', '));
-      console.error('       Please set up your Amadeus API credentials in .env file');
+      console.error('       Please set up your Amadeus API credentials:');
+      console.error('       Option A: Create .env file with your credentials');
+      console.error('       Option B: Add credentials to Claude Desktop configuration');
       console.error('       Get credentials from: https://developers.amadeus.com/');
       process.exit(1);
     }
@@ -93,15 +95,11 @@ A Model Context Protocol server for travel services using Amadeus API.
 
 SETUP:
   1. Get Amadeus API credentials from https://developers.amadeus.com/
-  2. Copy .env.example to .env and fill in your credentials
+  2. Option A: Copy .env.example to .env and fill in your credentials
+     Option B: Add credentials directly to Claude Desktop configuration
   3. Install dependencies: npm install
   4. Build the server: npm run build
   5. Configure in Claude Desktop or your MCP client
-
-ENVIRONMENT VARIABLES:
-  AMADEUS_CLIENT_ID      - Your Amadeus API client ID (required)
-  AMADEUS_CLIENT_SECRET  - Your Amadeus API client secret (required)
-  AMADEUS_ENVIRONMENT    - API environment: 'test' or 'production' (default: test)
 
 AVAILABLE TOOLS:
   - search_flights         - Search for flight offers
@@ -117,6 +115,9 @@ AVAILABLE TOOLS:
   Advanced Flight Features:
   - get_flight_seat_maps   - Get seat maps for flight orders
   - predict_flight_delay   - Predict flight delay probability
+  - create_flight_booking  - Create flight booking with traveler information
+  - get_flight_booking     - Retrieve flight booking details by ID
+  - get_flight_pricing     - Get detailed pricing with booking links
   
   Advanced Hotel Features:
   - get_hotel_sentiments   - Get hotel ratings and sentiment analysis

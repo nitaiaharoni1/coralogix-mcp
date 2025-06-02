@@ -1,8 +1,8 @@
 /**
- * Amadeus API service using the official Amadeus Node SDK
+ * Amadeus API service using the amadeus-ts SDK with full TypeScript support
  */
 
-import Amadeus from 'amadeus';
+import Amadeus, { ResponseError } from 'amadeus-ts';
 import { AmadeusCredentials } from '../types/amadeus.js';
 
 interface AmadeusResponse<T = any> {
@@ -33,13 +33,26 @@ export class AmadeusService {
    * Handle Amadeus API errors with detailed information
    */
   private handleError(error: any, operation: string): Error {
-    if (error.response) {
+    // Handle the new ResponseError from amadeus-ts
+    if (error instanceof ResponseError) {
+      const status = error.code;
+      const errorData = error.response?.body;
+
+      if (error.description && error.description.length > 0) {
+        const errorMessages = error.description.map((err: any) =>
+          `${err.code}: ${err.title} - ${err.detail || ''}`,
+        ).join('; ');
+        return new Error(`${operation} failed (${status}): ${errorMessages}`);
+      } else {
+        return new Error(`${operation} failed (${status}): Unknown API error`);
+      }
+    } else if (error.response) {
       const status = error.response.statusCode || error.response.status;
       const errorData = error.response.body || error.response.data;
-      
+
       if (errorData && errorData.errors) {
-        const errorMessages = errorData.errors.map((err: any) => 
-          `${err.code}: ${err.title} - ${err.detail || err.description || ''}`
+        const errorMessages = errorData.errors.map((err: any) =>
+          `${err.code}: ${err.title} - ${err.detail || err.description || ''}`,
         ).join('; ');
         return new Error(`${operation} failed (${status}): ${errorMessages}`);
       } else {
@@ -81,9 +94,52 @@ export class AmadeusService {
    */
   async getCheapestDates(params: any): Promise<AmadeusResponse> {
     try {
-      const response = await this.client.shopping.flightDates.get(params);
+      // Validate required parameters
+      if (!params.origin || !params.destination) {
+        throw new Error('Origin and destination are required for cheapest dates search');
+      }
+
+      // Ensure IATA codes are uppercase and 3 characters
+      const validatedParams = {
+        ...params,
+        origin: params.origin.toUpperCase().trim(),
+        destination: params.destination.toUpperCase().trim(),
+      };
+
+      // Validate IATA code format (3 letters)
+      if (!/^[A-Z]{3}$/.test(validatedParams.origin)) {
+        throw new Error(`Invalid origin IATA code: ${validatedParams.origin}. Must be 3 letters.`);
+      }
+      if (!/^[A-Z]{3}$/.test(validatedParams.destination)) {
+        throw new Error(`Invalid destination IATA code: ${validatedParams.destination}. Must be 3 letters.`);
+      }
+
+      // Convert ISO 8601 duration to days format if needed
+      if (validatedParams.duration && validatedParams.duration.startsWith('PT')) {
+        // Convert PT8H to days format (8 hours = 1 day approximately)
+        // For simplicity, convert hours to days and create a range
+        const hours = parseInt(validatedParams.duration.match(/(\d+)H/)?.[1] || '24');
+        const days = Math.ceil(hours / 24);
+        validatedParams.duration = `1,${Math.max(days, 7)}`; // Range from 1 to calculated days (minimum 7)
+      }
+
+      const response = await this.client.shopping.flightDates.get(validatedParams);
       return response;
-    } catch (error) {
+    } catch (error: any) {
+      // Enhanced error logging for debugging 500 errors (but don't use console.log to avoid JSON-RPC interference)
+      if (error.response) {
+        // Log to stderr instead of stdout to avoid JSON-RPC interference
+        process.stderr.write(`Cheapest dates API error: ${error.response.statusCode || error.response.status}\n`);
+        process.stderr.write(`Request params: ${JSON.stringify(params, null, 2)}\n`);
+        process.stderr.write(`Response body: ${JSON.stringify(error.response.body || error.response.data, null, 2)}\n`);
+      }
+
+      // Handle specific API errors for cheapest dates
+      if (error.description && Array.isArray(error.description)) {
+        const errorDetails = error.description[0];
+        process.stderr.write(`Error description: ${JSON.stringify(errorDetails, null, 2)}\n`);
+      }
+      
       throw this.handleError(error, 'Cheapest dates search');
     }
   }
@@ -193,6 +249,18 @@ export class AmadeusService {
       return response;
     } catch (error) {
       throw this.handleError(error, 'Flight booking');
+    }
+  }
+
+  /**
+   * Get flight order by ID
+   */
+  async getFlightOrder(flightOrderId: string): Promise<AmadeusResponse> {
+    try {
+      const response = await this.client.booking.flightOrder(flightOrderId).get();
+      return response;
+    } catch (error) {
+      throw this.handleError(error, 'Flight order retrieval');
     }
   }
 

@@ -2,7 +2,7 @@
   "compilerOptions": {
     "target": "ES2022",
     "module": "ESNext",
-    "moduleResolution": "Node",
+    "moduleResolution": "bundler",
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
     "allowJs": true,
@@ -20,15 +20,19 @@
     "declarationMap": true,
     "sourceMap": true,
     "forceConsistentCasingInFileNames": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "typeRoots": ["./node_modules/@types", "./src/types"]
   },
   "include": [
-    "**/*.ts",
-    "**/*.js"
+    "src/**/*.ts",
+    "server.ts"
   ],
   "exclude": [
     "node_modules",
-    "dist"
+    "dist",
+    "tests",
+    "**/*.d.ts",
+    "*.js"
   ],
   "ts-node": {
     "esm": false,

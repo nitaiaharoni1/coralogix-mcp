@@ -33,9 +33,12 @@ export class MCPServerTestHelper extends EventEmitter {
     timeout: NodeJS.Timeout;
   }>();
   private isStarted = false;
+  private instanceId: string;
 
   constructor(private serverPath: string = 'dist/server.js') {
     super();
+    // Create unique instance ID for parallel test execution
+    this.instanceId = `test-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
   }
 
   /**
@@ -53,7 +56,12 @@ export class MCPServerTestHelper extends EventEmitter {
 
       this.server = spawn('node', [this.serverPath], {
         stdio: ['pipe', 'pipe', 'pipe'],
-        env: { ...process.env }
+        env: { 
+          ...process.env,
+          TEST_INSTANCE_ID: this.instanceId,
+          // Add some randomization to avoid conflicts
+          PORT: String(3000 + Math.floor(Math.random() * 1000))
+        }
       });
 
       if (!this.server.stdout || !this.server.stdin || !this.server.stderr) {

@@ -35,7 +35,7 @@ export async function handleToolCall(request: CallToolRequest): Promise<{
 
     // Route to appropriate handler based on tool name
     // Check specific advanced tools first to avoid conflicts with general patterns
-    if (name === 'get_flight_seat_maps' || name === 'predict_flight_delay') {
+    if (name === 'get_flight_seat_maps' || name === 'predict_flight_delay' || name === 'create_flight_booking' || name === 'get_flight_booking' || name === 'get_flight_pricing') {
       result = await handleFlightAdvancedTool(name, args || {});
     } else if (name === 'get_hotel_sentiments' || name === 'search_hotel_autocomplete') {
       result = await handleHotelAdvancedTool(name, args || {});

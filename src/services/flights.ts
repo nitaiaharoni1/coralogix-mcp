@@ -3,10 +3,11 @@
  */
 
 import { AmadeusService } from './amadeus.js';
-import { FlightSearchParams, FlightOffer } from '../types/flights.js';
+import { FlightOffer, FlightSearchParams } from '../types/flights.js';
 
 export class FlightService {
-  constructor(private amadeusService: AmadeusService) {}
+  constructor(private amadeusService: AmadeusService) {
+  }
 
   /**
    * Search for flight offers
@@ -40,12 +41,26 @@ export class FlightService {
   /**
    * Get flight inspiration (cheapest destinations)
    */
-  async getFlightInspiration(origin: string, maxPrice?: number): Promise<any[]> {
+  async getFlightInspiration(
+    origin: string,
+    maxPrice?: number,
+    departureDate?: string,
+    oneWay?: boolean,
+  ): Promise<any[]> {
     try {
-      const searchParams = {
+      const searchParams: any = {
         origin,
-        maxPrice,
       };
+
+      if (maxPrice) {
+        searchParams.maxPrice = maxPrice;
+      }
+      if (departureDate) {
+        searchParams.departureDate = departureDate;
+      }
+      if (oneWay !== undefined) {
+        searchParams.oneWay = oneWay;
+      }
 
       const response = await this.amadeusService.getFlightInspiration(searchParams);
       return response.data || [];
@@ -61,15 +76,36 @@ export class FlightService {
     origin: string,
     destination: string,
     departureDate?: string,
-    oneWay?: boolean
+    oneWay?: boolean,
+    maxPrice?: number,
+    viewBy?: string,
+    duration?: string,
+    nonStop?: boolean,
   ): Promise<any[]> {
     try {
-      const searchParams = {
+      const searchParams: any = {
         origin,
         destination,
-        departureDate,
-        oneWay,
       };
+
+      if (departureDate) {
+        searchParams.departureDate = departureDate;
+      }
+      if (oneWay !== undefined) {
+        searchParams.oneWay = oneWay;
+      }
+      if (maxPrice) {
+        searchParams.maxPrice = maxPrice;
+      }
+      if (viewBy) {
+        searchParams.viewBy = viewBy;
+      }
+      if (duration) {
+        searchParams.duration = duration;
+      }
+      if (nonStop !== undefined) {
+        searchParams.nonStop = nonStop;
+      }
 
       const response = await this.amadeusService.getCheapestDates(searchParams);
       return response.data || [];

@@ -77,4 +77,16 @@ export class FlightAdvancedService {
       throw new Error(`Flight booking failed: ${error}`);
     }
   }
+
+  /**
+   * Get flight booking by ID
+   */
+  async getFlightBooking(bookingId: string): Promise<any> {
+    try {
+      const response = await this.amadeusService.getFlightOrder(bookingId);
+      return response.data || null;
+    } catch (error) {
+      throw new Error(`Flight booking retrieval failed: ${error}`);
+    }
+  }
 } 

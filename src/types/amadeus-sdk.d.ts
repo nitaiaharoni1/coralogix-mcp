@@ -6,13 +6,16 @@ declare module 'amadeus' {
   interface AmadeusConfig {
     clientId: string;
     clientSecret: string;
-    hostname?: 'test' | 'production';
+    hostname?: string;
   }
 
   interface AmadeusResponse<T = any> {
     data: T;
     result: any;
     body: any;
+    response?: any;
+    statusCode?: number;
+    status?: number;
   }
 
   interface AmadeusError {
@@ -76,6 +79,10 @@ declare module 'amadeus' {
         post(params: any): Promise<AmadeusResponse>;
         get(params: any): Promise<AmadeusResponse>;
       };
+      flightOrder(orderId: string): {
+        get(): Promise<AmadeusResponse>;
+        delete(): Promise<AmadeusResponse>;
+      };
       hotelOrders: {
         post(params: any): Promise<AmadeusResponse>;
       };
@@ -90,6 +97,9 @@ declare module 'amadeus' {
     referenceData: {
       locations: {
         get(params: any): Promise<AmadeusResponse>;
+        airports: {
+          get(params: any): Promise<AmadeusResponse>;
+        };
         hotels: {
           byCity: {
             get(params: any): Promise<AmadeusResponse>;
@@ -97,9 +107,6 @@ declare module 'amadeus' {
           byGeocode: {
             get(params: any): Promise<AmadeusResponse>;
           };
-        };
-        airports: {
-          get(params: any): Promise<AmadeusResponse>;
         };
         pointsOfInterest: {
           get(params: any): Promise<AmadeusResponse>;

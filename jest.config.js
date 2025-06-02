@@ -18,17 +18,62 @@ export default {
   coverageDirectory: 'coverage',
   coverageReporters: ['text', 'lcov', 'html'],
   setupFilesAfterEnv: ['<rootDir>/tests/setup.ts'],
-  testTimeout: 30000, // 30 seconds per test
+  testTimeout: 45000, // 45 seconds per test (increased for API calls)
   moduleNameMapper: {
     '^(\\.{1,2}/.*)\\.js$': '$1',
   },
-  // Run tests serially to avoid API rate limits
-  maxWorkers: 1,
-  // Clean output
-  verbose: false,
+  
+  // Parallel execution configuration
+  maxWorkers: '50%', // Use 50% of available CPU cores
+  workerIdleMemoryLimit: '512MB', // Limit memory per worker
+  
+  // Enhanced reporting
+  reporters: [
+    'default',
+    ['jest-html-reporters', {
+      publicPath: './test-reports',
+      filename: 'test-report.html',
+      expand: true,
+      hideIcon: false,
+      pageTitle: 'Travel MCP Test Report',
+      logoImgPath: undefined,
+      includeFailureMsg: true,
+      includeSuiteFailure: true,
+      includeConsoleLog: true,
+      enableMergeData: true,
+      dataMergeLevel: 1,
+      customInfos: [
+        { title: 'Environment', value: 'Test' },
+        { title: 'API', value: 'Amadeus Test API' },
+        { title: 'Timestamp', value: new Date().toISOString() }
+      ]
+    }]
+  ],
+  
+  // Performance optimizations
+  verbose: true, // Show individual test results
   silent: false,
-  // Better error reporting
-  bail: 1, // Stop on first failure
+  bail: false, // Don't stop on first failure in parallel mode
   detectOpenHandles: true,
   forceExit: true,
+  
+  // Test execution strategy
+  testSequencer: '@jest/test-sequencer', // Default sequencer for parallel execution
+  
+  // Cache configuration for faster subsequent runs
+  cache: true,
+  cacheDirectory: '<rootDir>/.jest-cache',
+  
+  // Global setup/teardown for parallel tests
+  globalSetup: undefined,
+  globalTeardown: undefined,
+  
+  // Error handling
+  errorOnDeprecated: false,
+  testFailureExitCode: 1,
+  
+  // Output configuration
+  clearMocks: true,
+  restoreMocks: true,
+  resetMocks: false,
 }; 

@@ -1,7 +1,6 @@
 /**
  * End-to-End Tests for Travel MCP Server
  * Tests all travel tools with real Amadeus API integration
- * Requires valid AMADEUS_CLIENT_ID and AMADEUS_CLIENT_SECRET in .env
  */
 
 import { MCPServerTestHelper } from '../helpers/mcp-server.js';
@@ -31,7 +30,7 @@ describe('Travel MCP Server E2E Tests', () => {
       
       const tools = await server.listTools();
       
-      expect(tools).toHaveLength(17);
+      expect(tools).toHaveLength(20);
       
       const toolNames = tools.map(tool => tool.name);
       expect(toolNames).toEqual(expect.arrayContaining([
@@ -52,7 +51,11 @@ describe('Travel MCP Server E2E Tests', () => {
         'search_activities',
         'search_points_of_interest',
         'get_travel_analytics',
-        'predict_trip_purpose'
+        'predict_trip_purpose',
+        // New booking tools
+        'create_flight_booking',
+        'get_flight_booking',
+        'get_flight_pricing'
       ]));
 
       TestLogger.success(`Found ${tools.length} tools`);

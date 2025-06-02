@@ -12,7 +12,7 @@ export function getAmadeusService(): AmadeusService {
     const credentials: AmadeusCredentials = {
       clientId: process.env.AMADEUS_CLIENT_ID || '',
       clientSecret: process.env.AMADEUS_CLIENT_SECRET || '',
-      environment: (process.env.AMADEUS_ENVIRONMENT as 'test' | 'production') || 'test',
+      environment: (process.env.AMADEUS_ENVIRONMENT as 'test' | 'production') || 'production',
     };
 
     if (!credentials.clientId || !credentials.clientSecret) {
