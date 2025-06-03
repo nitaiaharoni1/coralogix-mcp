@@ -1,6 +1,6 @@
 {
   "name": "travel-mcp",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Model Context Protocol server for travel services using Amadeus API - flight search, hotel booking, airport information, and travel recommendations",
   "type": "module",
   "main": "dist/server.js",
