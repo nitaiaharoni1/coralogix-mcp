@@ -28,7 +28,7 @@ export class AnalyticsService {
       const response = await this.amadeusService.getTravelAnalytics(searchParams);
       return response.data || [];
     } catch (error) {
-      throw new Error(`Travel analytics failed: ${error}`);
+      throw this.amadeusService.handleError(error, 'Travel analytics');
     }
   }
 
@@ -47,7 +47,7 @@ export class AnalyticsService {
       const response = await this.amadeusService.getTripPurposePrediction(searchParams);
       return response.data || null;
     } catch (error) {
-      throw new Error(`Trip purpose prediction failed: ${error}`);
+      throw this.amadeusService.handleError(error, 'Trip purpose prediction');
     }
   }
 } 

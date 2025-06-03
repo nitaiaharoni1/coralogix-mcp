@@ -110,7 +110,9 @@ export async function handleLocationTool(name: string, args: any): Promise<strin
 }
 
 async function handleSearchLocations(service: LocationService, args: any): Promise<string> {
-  const locations = await service.searchLocations(args.keyword, args.subType);
+  // Convert array to string if needed for backward compatibility
+  const subType = Array.isArray(args.subType) ? args.subType[0] : args.subType;
+  const locations = await service.searchLocations(args.keyword, subType);
   
   if (locations.length === 0) {
     return `No locations found for "${args.keyword}".`;
@@ -131,12 +133,13 @@ async function handleSearchLocations(service: LocationService, args: any): Promi
 }
 
 async function handleGetAirportInfo(service: LocationService, args: any): Promise<string> {
-  const airport = await service.getAirportInfo(args.iataCode);
+  const airports = await service.getAirportInfo(args.iataCode);
   
-  if (!airport) {
+  if (!airports || airports.length === 0) {
     return `No airport found with IATA code "${args.iataCode}".`;
   }
 
+  const airport = airports[0]; // Take the first result
   const address = airport.address;
   const coords = airport.geoCode;
   

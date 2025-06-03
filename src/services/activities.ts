@@ -26,7 +26,7 @@ export class ActivitiesService {
       const response = await this.amadeusService.searchActivities(searchParams);
       return response.data || [];
     } catch (error) {
-      throw new Error(`Activities search failed: ${error}`);
+      throw this.amadeusService.handleError(error, 'Activities search');
     }
   }
 
@@ -44,7 +44,7 @@ export class ActivitiesService {
       const response = await this.amadeusService.searchPointsOfInterest(searchParams);
       return response.data || [];
     } catch (error) {
-      throw new Error(`Points of interest search failed: ${error}`);
+      throw this.amadeusService.handleError(error, 'Points of interest search');
     }
   }
 } 

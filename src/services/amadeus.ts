@@ -32,11 +32,20 @@ export class AmadeusService {
   /**
    * Handle Amadeus API errors with detailed information
    */
-  private handleError(error: any, operation: string): Error {
+  public handleError(error: any, operation: string): Error {
     // Handle the new ResponseError from amadeus-ts
     if (error instanceof ResponseError) {
       const status = error.code;
       const errorData = error.response?.body;
+
+      // Special handling for 500 errors - these typically indicate searches are too generic
+      if (status === 'ServerError' || (error.response?.statusCode === 500)) {
+        return new Error(
+          `${operation} failed: Search too generic - need more request parameters to filter results. ` +
+          `Try adding parameters like: maxPrice, nonStop=true, includedAirlineCodes, excludedAirlineCodes, ` +
+          `travelClass, or more specific dates. The Amadeus API times out when searches are too broad.`
+        );
+      }
 
       if (error.description && error.description.length > 0) {
         const errorMessages = error.description.map((err: any) =>
@@ -48,20 +57,27 @@ export class AmadeusService {
       }
     } else if (error.response) {
       const status = error.response.statusCode || error.response.status;
-      const errorData = error.response.body || error.response.data;
+      
+      // Also handle 500 errors from regular HTTP responses
+      if (status === 500) {
+        return new Error(
+          `${operation} failed: Search too generic - need more request parameters to filter results. ` +
+          `Try adding parameters like: maxPrice, nonStop=true, includedAirlineCodes, excludedAirlineCodes, ` +
+          `travelClass, or more specific dates. The Amadeus API times out when searches are too broad.`
+        );
+      }
 
+      const errorData = error.response.data || error.response.body;
       if (errorData && errorData.errors) {
         const errorMessages = errorData.errors.map((err: any) =>
-          `${err.code}: ${err.title} - ${err.detail || err.description || ''}`,
+          `${err.code}: ${err.title} - ${err.detail || ''}`,
         ).join('; ');
         return new Error(`${operation} failed (${status}): ${errorMessages}`);
       } else {
-        return new Error(`${operation} failed (${status}): ${error.message || 'Unknown API error'}`);
+        return new Error(`${operation} failed (${status}): ${errorData?.message || 'Unknown error'}`);
       }
-    } else if (error.code) {
-      return new Error(`${operation} failed: ${error.code} - ${error.message}`);
     } else {
-      return new Error(`${operation} failed: ${error.message || error.toString()}`);
+      return new Error(`${operation} failed: ${error.message || 'Unknown error'}`);
     }
   }
 

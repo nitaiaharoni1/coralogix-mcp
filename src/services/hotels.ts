@@ -64,7 +64,7 @@ export class HotelService {
 
       return response.data || [];
     } catch (error) {
-      throw new Error(`Hotel search failed: ${error}`);
+      throw this.amadeusService.handleError(error, 'Hotel search');
     }
   }
 
@@ -90,7 +90,7 @@ export class HotelService {
       const response = await this.amadeusService.searchHotelOffers(searchParams);
       return response.data || [];
     } catch (error) {
-      throw new Error(`Hotel offers search failed: ${error}`);
+      throw this.amadeusService.handleError(error, 'Hotel offers search');
     }
   }
 } 

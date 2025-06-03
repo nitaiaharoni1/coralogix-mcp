@@ -9,70 +9,76 @@ export class LocationService {
   constructor(private amadeusService: AmadeusService) {}
 
   /**
-   * Search for airports and cities
+   * Search for locations (airports, cities)
    */
-  async searchLocations(keyword: string, subType?: string[]): Promise<Location[]> {
+  async searchLocations(keyword: string, subType?: string): Promise<Location[]> {
     try {
-      const searchParams = {
+      const params: any = {
         keyword,
-        subType: subType?.join(',') || 'AIRPORT,CITY',
+        'page[limit]': 10,
       };
+      
+      if (subType) {
+        params.subType = subType;
+      }
 
-      const response = await this.amadeusService.searchLocations(searchParams);
+      const response = await this.amadeusService.searchLocations(params);
       return response.data || [];
     } catch (error) {
-      throw new Error(`Location search failed: ${error}`);
+      throw this.amadeusService.handleError(error, 'Location search');
     }
   }
 
   /**
    * Get airport information by IATA code
    */
-  async getAirportInfo(iataCode: string): Promise<Location | null> {
+  async getAirportInfo(iataCode: string): Promise<Location[]> {
     try {
-      const searchParams = {
+      const params = {
         keyword: iataCode,
         subType: 'AIRPORT',
       };
 
-      const response = await this.amadeusService.searchLocations(searchParams);
-      return response.data?.[0] || null;
-    } catch (error) {
-      throw new Error(`Airport info search failed: ${error}`);
-    }
-  }
-
-  /**
-   * Get nearby airports
-   */
-  async getNearbyAirports(latitude: number, longitude: number, radius: number = 500): Promise<Location[]> {
-    try {
-      const searchParams = {
-        latitude,
-        longitude,
-        radius,
-      };
-
-      const response = await this.amadeusService.getNearbyAirports(searchParams);
+      const response = await this.amadeusService.searchLocations(params);
       return response.data || [];
     } catch (error) {
-      throw new Error(`Nearby airports search failed: ${error}`);
+      throw this.amadeusService.handleError(error, 'Airport info search');
     }
   }
 
   /**
-   * Get airline information
+   * Get nearby airports by coordinates
+   */
+  async getNearbyAirports(latitude: number, longitude: number, radius?: number): Promise<Location[]> {
+    try {
+      const params = {
+        latitude,
+        longitude,
+        radius: radius || 500,
+        'page[limit]': 10,
+        sort: 'relevance',
+      };
+
+      const response = await this.amadeusService.getNearbyAirports(params);
+      return response.data || [];
+    } catch (error) {
+      throw this.amadeusService.handleError(error, 'Nearby airports search');
+    }
+  }
+
+  /**
+   * Get airline information by IATA code
    */
   async getAirlineInfo(airlineCodes: string[]): Promise<any[]> {
     try {
-      const searchParams = {
+      const params = {
         airlineCodes: airlineCodes.join(','),
       };
 
-      const response = await this.amadeusService.getAirlineInfo(searchParams);
+      const response = await this.amadeusService.getAirlineInfo(params);
       return response.data || [];
     } catch (error) {
-      throw new Error(`Airline info search failed: ${error}`);
+      throw this.amadeusService.handleError(error, 'Airline info search');
     }
   }
 } 

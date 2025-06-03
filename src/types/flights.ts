@@ -11,12 +11,13 @@ export interface FlightSearchParams {
   children?: number;
   infants?: number;
   travelClass?: 'ECONOMY' | 'PREMIUM_ECONOMY' | 'BUSINESS' | 'FIRST';
-  includedAirlineCodes?: string[];
-  excludedAirlineCodes?: string[];
+  includedAirlineCodes?: string[] | string;
+  excludedAirlineCodes?: string[] | string;
   nonStop?: boolean;
   currencyCode?: string;
   maxPrice?: number;
   max?: number;
+  maxNumberOfConnections?: number;
 }
 
 export interface FlightOffer {

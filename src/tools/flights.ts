@@ -36,7 +36,7 @@ async function resolveLocationToIATA(location: string): Promise<string> {
 
   try {
     const locationService = getLocationService();
-    const results = await locationService.searchLocations(location, ['AIRPORT', 'CITY']);
+    const results = await locationService.searchLocations(location, 'AIRPORT');
 
     if (results.length > 0) {
       // Prefer airports over cities, and prioritize by traveler score
@@ -48,6 +48,12 @@ async function resolveLocationToIATA(location: string): Promise<string> {
       if (bestMatch && bestMatch.iataCode) {
         return bestMatch.iataCode;
       }
+    }
+
+    // Try city search if airport search fails
+    const cityResults = await locationService.searchLocations(location, 'CITY');
+    if (cityResults.length > 0) {
+      return cityResults[0].iataCode;
     }
 
     // Fallback: return original if no match found
@@ -114,62 +120,80 @@ function parseDateExpression(dateExpression?: string): string | undefined {
 export const flightTools: Tool[] = [
   {
     name: 'search_flights',
-    description: 'Search for specific flight offers ONLY when the user provides an exact departure date (e.g., "June 15th", "2025-06-15", "tomorrow"). DO NOT use this tool for finding cheapest dates, flexible dates, or when user asks for "this month" without a specific date. This tool requires a specific date and returns detailed booking information.',
+    description: 'Search for specific flight offers with exact departure date. ONLY use when user provides an exact departure date (e.g., "2024-12-25"). DO NOT use for flexible date searches like "this month" or "cheapest dates" - use get_cheapest_dates instead.',
     inputSchema: {
       type: 'object',
       properties: {
         originLocationCode: {
           type: 'string',
-          description: 'IATA airport code for departure (e.g., "NYC", "LAX", "TLV" for Tel Aviv)',
+          description: 'IATA airport code for departure (e.g., "JFK", "LAX")',
         },
         destinationLocationCode: {
           type: 'string',
-          description: 'IATA airport code for arrival (e.g., "LON", "PAR", "BUD" for Budapest)',
+          description: 'IATA airport code for arrival (e.g., "LHR", "CDG")',
         },
         departureDate: {
           type: 'string',
-          description: 'Departure date in YYYY-MM-DD format',
+          description: 'Departure date in YYYY-MM-DD format (e.g., "2024-12-25")',
         },
         returnDate: {
           type: 'string',
-          description: 'Return date in YYYY-MM-DD format (optional for one-way)',
+          description: 'Return date in YYYY-MM-DD format for round-trip flights (optional)',
         },
         adults: {
-          type: 'number',
+          type: 'integer',
           description: 'Number of adult passengers (default: 1)',
-          default: 1,
+          minimum: 1,
+          maximum: 9,
         },
         children: {
-          type: 'number',
-          description: 'Number of child passengers (default: 0)',
-          default: 0,
+          type: 'integer',
+          description: 'Number of child passengers (2-11 years old)',
+          minimum: 0,
+          maximum: 9,
         },
         infants: {
-          type: 'number',
-          description: 'Number of infant passengers (default: 0)',
-          default: 0,
+          type: 'integer',
+          description: 'Number of infant passengers (under 2 years old)',
+          minimum: 0,
+          maximum: 9,
         },
         travelClass: {
           type: 'string',
-          enum: ['ECONOMY', 'PREMIUM_ECONOMY', 'BUSINESS', 'FIRST'],
           description: 'Travel class preference',
+          enum: ['ECONOMY', 'PREMIUM_ECONOMY', 'BUSINESS', 'FIRST'],
         },
         nonStop: {
           type: 'boolean',
-          description: 'Search for non-stop flights only',
-        },
-        currencyCode: {
-          type: 'string',
-          description: 'Currency code for pricing (e.g., "USD", "EUR")',
+          description: 'If true, only direct flights (helps prevent 500 errors)',
         },
         maxPrice: {
           type: 'number',
-          description: 'Maximum price filter',
+          description: 'Maximum price filter (helps prevent 500 errors by limiting results)',
+        },
+        currencyCode: {
+          type: 'string',
+          description: 'Currency for prices (e.g., "USD", "EUR", "GBP")',
         },
         max: {
-          type: 'number',
-          description: 'Maximum number of results (default: 50)',
-          default: 50,
+          type: 'integer',
+          description: 'Maximum number of flight offers to return (default: 250, max: 250)',
+          minimum: 1,
+          maximum: 250,
+        },
+        includedAirlineCodes: {
+          type: 'string',
+          description: 'Comma-separated airline codes to include (e.g., "AA,BA,LH") - helps filter results',
+        },
+        excludedAirlineCodes: {
+          type: 'string',
+          description: 'Comma-separated airline codes to exclude (e.g., "FR,U2") - helps filter results',
+        },
+        maxNumberOfConnections: {
+          type: 'integer',
+          description: 'Maximum number of connections (0 for direct flights only)',
+          minimum: 0,
+          maximum: 2,
         },
       },
       required: ['originLocationCode', 'destinationLocationCode', 'departureDate'],
@@ -177,26 +201,50 @@ export const flightTools: Tool[] = [
   },
   {
     name: 'get_flight_inspiration',
-    description: 'Find cheapest destinations from a specific origin when the destination is unknown or flexible. Use when user asks "where can I fly cheapest from X" or wants destination inspiration. NOT for finding dates to a specific destination.',
+    description: 'Find flight destinations from an origin when destination is unknown or flexible. Use when user asks "where can I fly from X?" or "cheap destinations from X". Perfect for destination discovery.',
     inputSchema: {
       type: 'object',
       properties: {
         origin: {
           type: 'string',
-          description: 'IATA airport code for departure (e.g., "NYC", "TLV" for Tel Aviv)',
-        },
-        maxPrice: {
-          type: 'number',
-          description: 'Maximum price filter',
+          description: 'IATA airport code for departure (e.g., "JFK", "LAX", "TLV")',
         },
         departureDate: {
           type: 'string',
-          description: 'Preferred departure date in YYYY-MM-DD format (optional)',
+          description: 'Departure date in YYYY-MM-DD format (optional, defaults to today)',
         },
         oneWay: {
           type: 'boolean',
           description: 'Search for one-way flights only (default: true)',
-          default: true,
+        },
+        nonStop: {
+          type: 'boolean',
+          description: 'If true, only direct flights (helps prevent 500 errors)',
+        },
+        maxPrice: {
+          type: 'number',
+          description: 'Maximum price filter (helps prevent 500 errors by limiting results)',
+        },
+        viewBy: {
+          type: 'string',
+          description: 'How to group results',
+          enum: ['DATE', 'DESTINATION', 'DURATION', 'WEEK', 'COUNTRY'],
+        },
+        duration: {
+          type: 'string',
+          description: 'Trip duration in days (e.g., "1,7" for 1-7 days, "3" for exactly 3 days). Optional parameter.',
+        },
+        currencyCode: {
+          type: 'string',
+          description: 'Currency for prices (e.g., "USD", "EUR", "GBP")',
+        },
+        includedAirlineCodes: {
+          type: 'string',
+          description: 'Comma-separated airline codes to include (e.g., "AA,BA,LH") - helps filter results',
+        },
+        excludedAirlineCodes: {
+          type: 'string',
+          description: 'Comma-separated airline codes to exclude (e.g., "FR,U2") - helps filter results',
         },
       },
       required: ['origin'],
@@ -204,47 +252,57 @@ export const flightTools: Tool[] = [
   },
   {
     name: 'get_cheapest_dates',
-    description: 'Find the cheapest dates to fly between two specific destinations when dates are flexible. PERFECT for queries like "cheapest flight this month from X to Y", "when is cheapest to fly from X to Y", or "find cheapest flight this month from israel to budapest". Use when both origin and destination are known but dates are flexible. This is the PRIMARY tool for finding cheap flights when no specific date is given.',
+    description: 'Find cheapest flight dates between two destinations. PRIMARY tool for finding cheap flights when no specific date is given (e.g., "cheapest flight this month", "find cheap flights to Budapest"). Use this for flexible date searches.',
     inputSchema: {
       type: 'object',
       properties: {
         origin: {
           type: 'string',
-          description: 'IATA airport code for departure (e.g., "TLV" for Tel Aviv, "NYC")',
+          description: 'IATA airport code for departure (e.g., "JFK", "LAX", "TLV")',
         },
         destination: {
           type: 'string',
-          description: 'IATA airport code for arrival (e.g., "BUD" for Budapest, "PAR")',
+          description: 'IATA airport code for arrival (e.g., "LHR", "CDG", "BUD")',
         },
         departureDate: {
           type: 'string',
-          description: 'Preferred departure date in YYYY-MM-DD format (optional). If user mentions "this month" or a specific month, use the first day of that month.',
+          description: 'Earliest departure date in YYYY-MM-DD format (optional, defaults to today)',
         },
         oneWay: {
           type: 'boolean',
           description: 'Search for one-way flights only (default: true)',
-          default: true,
+        },
+        nonStop: {
+          type: 'boolean',
+          description: 'If true, only direct flights (helps prevent 500 errors)',
         },
         maxPrice: {
           type: 'number',
-          description: 'Maximum price filter',
+          description: 'Maximum price filter (helps prevent 500 errors by limiting results)',
+        },
+        viewBy: {
+          type: 'string',
+          description: 'How to group results',
+          enum: ['DATE', 'DESTINATION', 'DURATION', 'WEEK', 'COUNTRY'],
         },
         duration: {
           type: 'string',
           description: 'Trip duration in days (e.g., "1,7" for 1-7 days, "3" for exactly 3 days). Optional parameter.',
         },
-        nonStop: {
-          type: 'boolean',
-          description: 'Search for non-stop flights only',
-        },
-        viewBy: {
+        currencyCode: {
           type: 'string',
-          enum: ['DATE', 'DURATION', 'WEEK', 'COUNTRY'],
-          description: 'How to group results (default: DATE for chronological cheapest dates)',
-          default: 'DATE',
+          description: 'Currency for prices (e.g., "USD", "EUR", "GBP")',
+        },
+        includedAirlineCodes: {
+          type: 'string',
+          description: 'Comma-separated airline codes to include (e.g., "AA,BA,LH") - helps filter results',
+        },
+        excludedAirlineCodes: {
+          type: 'string',
+          description: 'Comma-separated airline codes to exclude (e.g., "FR,U2") - helps filter results',
         },
       },
-      required: ['origin', 'destination', 'nonStop', 'viewBy', 'duration'],
+      required: ['origin', 'destination'],
     },
   },
 ];
@@ -321,21 +379,21 @@ async function handleFlightInspiration(service: FlightService, args: any): Promi
   // Parse date expression if provided
   const departureDate = parseDateExpression(args.departureDate);
 
-  const resolvedArgs = {
-    ...args,
-    origin: originCode,
-    departureDate,
-  };
-
   const destinations = await service.getFlightInspiration(
-    resolvedArgs.origin,
-    resolvedArgs.maxPrice,
-    resolvedArgs.departureDate,
-    resolvedArgs.oneWay,
+    originCode,
+    args.maxPrice,
+    departureDate,
+    args.oneWay,
+    args.nonStop,
+    args.viewBy,
+    args.duration,
+    args.currencyCode,
+    args.includedAirlineCodes,
+    args.excludedAirlineCodes,
   );
 
   if (destinations.length === 0) {
-    return `No flight destinations found from ${originCode}. Try adjusting your search criteria.`;
+    return `No flight destinations found from ${originCode}. Try adjusting your search criteria or adding more filtering parameters like maxPrice, nonStop=true, or specific airlines.`;
   }
 
   const results = destinations.slice(0, 15).map((dest, index) => {
@@ -363,10 +421,13 @@ async function handleCheapestDates(service: FlightService, args: any): Promise<s
       args.viewBy,
       args.duration,
       args.nonStop,
+      args.currencyCode,
+      args.includedAirlineCodes,
+      args.excludedAirlineCodes,
     );
 
     if (dates.length === 0) {
-      return `No flight dates found for ${originCode} → ${destinationCode}.`;
+      return `No flight dates found for ${originCode} → ${destinationCode}. Try adding more filtering parameters like maxPrice, nonStop=true, or specific airlines to narrow the search.`;
     }
 
     // Format standard API results
@@ -384,6 +445,12 @@ async function handleCheapestDates(service: FlightService, args: any): Promise<s
       `• Use 'get_flight_inspiration' to see all available destinations from ${originCode}\n` +
       `• This route may have limited availability in the cheapest dates database\n` +
       `• The cheapest dates API works best for popular international routes\n\n` +
-      `⚠️ **Note**: Please do NOT use 'search_flights' as it requires specific dates and won't help find the cheapest options across flexible dates.`;
+      `⚠️ **Note**: Please do NOT use 'search_flights' as it requires specific dates and won't help find the cheapest options across flexible dates.\n\n` +
+      `💡 **To avoid 500 errors, try adding filtering parameters like:**\n` +
+      `• maxPrice (e.g., 500 for under $500)\n` +
+      `• nonStop=true (for direct flights only)\n` +
+      `• includedAirlineCodes (e.g., "AA,BA,LH" for specific airlines)\n` +
+      `• currencyCode (e.g., "USD", "EUR")\n` +
+      `• More specific departure dates`;
   }
 } 

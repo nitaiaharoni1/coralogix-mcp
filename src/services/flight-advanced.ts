@@ -26,7 +26,7 @@ export class FlightAdvancedService {
       const response = await this.amadeusService.getSeatMaps(searchParams);
       return response.data || [];
     } catch (error) {
-      throw new Error(`Seat maps search failed: ${error}`);
+      throw this.amadeusService.handleError(error, 'Seat maps search');
     }
   }
 
@@ -50,7 +50,7 @@ export class FlightAdvancedService {
       const response = await this.amadeusService.getFlightDelayPrediction(searchParams);
       return response.data || null;
     } catch (error) {
-      throw new Error(`Flight delay prediction failed: ${error}`);
+      throw this.amadeusService.handleError(error, 'Flight delay prediction');
     }
   }
 
@@ -62,7 +62,7 @@ export class FlightAdvancedService {
       const response = await this.amadeusService.getFlightPricing(params);
       return response.data || null;
     } catch (error) {
-      throw new Error(`Flight pricing failed: ${error}`);
+      throw this.amadeusService.handleError(error, 'Flight pricing');
     }
   }
 
@@ -74,7 +74,7 @@ export class FlightAdvancedService {
       const response = await this.amadeusService.createFlightOrder(params);
       return response.data || null;
     } catch (error) {
-      throw new Error(`Flight booking failed: ${error}`);
+      throw this.amadeusService.handleError(error, 'Flight booking');
     }
   }
 
@@ -86,7 +86,7 @@ export class FlightAdvancedService {
       const response = await this.amadeusService.getFlightOrder(bookingId);
       return response.data || null;
     } catch (error) {
-      throw new Error(`Flight booking retrieval failed: ${error}`);
+      throw this.amadeusService.handleError(error, 'Flight booking retrieval');
     }
   }
 } 

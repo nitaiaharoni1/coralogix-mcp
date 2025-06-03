@@ -24,7 +24,7 @@ export class HotelAdvancedService {
       const response = await this.amadeusService.getHotelSentiments(searchParams);
       return response.data || [];
     } catch (error) {
-      throw new Error(`Hotel sentiments search failed: ${error}`);
+      throw this.amadeusService.handleError(error, 'Hotel sentiments search');
     }
   }
 
@@ -40,7 +40,7 @@ export class HotelAdvancedService {
       const response = await this.amadeusService.searchLocations(searchParams);
       return response.data || [];
     } catch (error) {
-      throw new Error(`Hotel autocomplete search failed: ${error}`);
+      throw this.amadeusService.handleError(error, 'Hotel autocomplete search');
     }
   }
 
@@ -52,7 +52,7 @@ export class HotelAdvancedService {
       const response = await this.amadeusService.createHotelOrder(params);
       return response.data || null;
     } catch (error) {
-      throw new Error(`Hotel booking failed: ${error}`);
+      throw this.amadeusService.handleError(error, 'Hotel booking');
     }
   }
 } 
