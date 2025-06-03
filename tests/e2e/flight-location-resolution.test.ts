@@ -3,15 +3,15 @@
  * Tests the ability to resolve location names to IATA codes and handle natural language queries
  */
 
-import { MCPServerTestHelper } from '../helpers/mcp-server-test-helper.js';
+import { MCPServerHelper } from '../helpers/mcp-server.js';
 import { TestLogger } from '../helpers/test-logger.js';
 
 describe('Flight Location Resolution E2E Tests', () => {
-  let server: MCPServerTestHelper;
+  let server: MCPServerHelper;
 
   beforeAll(async () => {
     TestLogger.setSuite('Flight Location Resolution');
-    server = new MCPServerTestHelper();
+    server = new MCPServerHelper();
     await server.start();
   });
 
