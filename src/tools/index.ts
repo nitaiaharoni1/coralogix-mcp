@@ -5,31 +5,24 @@
 import { Tool } from '@modelcontextprotocol/sdk/types.js';
 import { CallToolRequest } from '@modelcontextprotocol/sdk/types.js';
 import { queryTools, handleQueryTool } from './query.js';
-import { billingTools, handleBillingTool } from './billing.js';
 import { alertTools, handleAlertTool } from './alerts.js';
 import { dashboardTools, handleDashboardTool } from './dashboards.js';
-import { incidentTools, handleIncidentTool } from './incidents.js';
-import { sloTools, handleSloTool } from './slos.js';
-import { dataUsageTools, handleDataUsageTools } from './data-usage.js';
-import { policiesTools, handlePoliciesTools } from './policies.js';
-
 import { targetsTools, handleTargetsTools } from './targets.js';
-import { teamPermissionsTools, handleTeamPermissionsTools } from './team-permissions.js';
 
-// Combine all tool definitions
+// Note: The following tools are not available in EU2 region (return 404):
+// - Data Usage/Billing tools (/v2/datausage endpoints)
+// - Incidents tools (/v1/incidents endpoints)
+// - SLOs tools (/v1/slo/slos endpoints)
+// - Policies tools (/v2/policies endpoints)
+// - Team Permissions tools (/v1/teams/groups endpoints)
+
+// Combine all working tool definitions
 export function getToolDefinitions(): Tool[] {
   return [
-    ...queryTools,
-    ...billingTools,
-    ...alertTools,
-    ...dashboardTools,
-    ...incidentTools,
-    ...sloTools,
-    ...dataUsageTools,
-    ...policiesTools,
-
-    ...targetsTools,
-    ...teamPermissionsTools
+    ...queryTools,        // ✅ DataPrime & Lucene queries, background queries
+    ...alertTools,        // ✅ Alert definitions management
+    ...dashboardTools,    // ✅ Dashboard catalog and management
+    ...targetsTools       // ✅ S3 target configuration
   ];
 }
 
@@ -46,33 +39,13 @@ export async function handleToolCall(request: CallToolRequest): Promise<{
     // Route to appropriate handler based on tool name
     if (name.startsWith('query_') || name.includes('background_query')) {
       result = await handleQueryTool(name, args || {});
-    } else if (name.startsWith('get_data_usage') || name.startsWith('get_current_quota')) {
-      const billingResult = await handleBillingTool(name, args || {});
-      if (billingResult === null) {
-        throw new Error(`Unknown billing tool: ${name}`);
-      }
-      result = billingResult;
     } else if (name.includes('alert')) {
       result = await handleAlertTool(name, args || {});
     } else if (name.includes('dashboard')) {
       result = await handleDashboardTool(name, args || {});
-    } else if (name.includes('incident')) {
-      result = await handleIncidentTool(name, args || {});
-    } else if (name.includes('slo')) {
-      result = await handleSloTool(name, args || {});
-    } else if (dataUsageTools.some(tool => tool.name === name)) {
-      const { getCoralogixClient } = await import('../services/coralogix-client.js');
-      result = await handleDataUsageTools(name, args || {}, getCoralogixClient());
-    } else if (policiesTools.some(tool => tool.name === name)) {
-      const { getCoralogixClient } = await import('../services/coralogix-client.js');
-      result = await handlePoliciesTools(name, args || {}, getCoralogixClient());
-
     } else if (targetsTools.some(tool => tool.name === name)) {
       const { getCoralogixClient } = await import('../services/coralogix-client.js');
       result = await handleTargetsTools(name, args || {}, getCoralogixClient());
-    } else if (teamPermissionsTools.some(tool => tool.name === name)) {
-      const { getCoralogixClient } = await import('../services/coralogix-client.js');
-      result = await handleTeamPermissionsTools(name, args || {}, getCoralogixClient());
     } else {
       throw new Error(`Unknown tool: ${name}`);
     }

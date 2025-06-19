@@ -2,7 +2,13 @@
 
 /**
  * Coralogix MCP Server
- * Main entry point for the MCP server with Coralogix Data Query API integration
+ * Main entry point for the MCP server with Coralogix API integration
+ * 
+ * Working APIs in EU2 region:
+ * - Query APIs (DataPrime, Lucene, Background queries)
+ * - Alert Definitions
+ * - Dashboard Catalog
+ * - Target Management
  */
 
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
@@ -59,7 +65,7 @@ async function main(): Promise<void> {
       console.error('ERROR: Missing required environment variables:', missingVars.join(', '));
       console.error('       Please set up your Coralogix API credentials:');
       console.error('       CORALOGIX_API_KEY: Your Coralogix API key');
-      console.error('       CORALOGIX_DOMAIN: Your Coralogix domain (e.g., coralogix.com, coralogix.us)');
+      console.error('       CORALOGIX_DOMAIN: Your Coralogix domain (e.g., eu2.coralogix.com, coralogix.com)');
       console.error('       Get API key from: https://coralogix.com/docs/api-keys/');
       process.exit(1);
     }
@@ -70,7 +76,7 @@ async function main(): Promise<void> {
     const transport = new StdioServerTransport();
     await server.connect(transport);
     console.error('INFO: Coralogix MCP Server started successfully');
-    console.error('INFO: Available tools: DataPrime queries, Lucene queries, background queries');
+    console.error('INFO: Available tools: DataPrime queries, Lucene queries, Alert management, Dashboard catalog, Target configuration');
   } catch (error) {
     console.error('ERROR: Server startup failed:', (error as Error).message);
     process.exit(1);
@@ -91,19 +97,20 @@ if (isMainModule) {
     console.log(`
 Coralogix MCP Server v${SERVER_CONFIG.version}
 
-A Model Context Protocol server for Coralogix Data Query APIs.
+A Model Context Protocol server for Coralogix APIs.
 
 SETUP:
   1. Get Coralogix API key from your Coralogix account
   2. Set environment variables:
      CORALOGIX_API_KEY=your_api_key
-     CORALOGIX_DOMAIN=your_domain (e.g., coralogix.com, coralogix.us)
+     CORALOGIX_DOMAIN=your_domain (e.g., eu2.coralogix.com, coralogix.com)
   3. Install dependencies: npm install
   4. Build the server: npm run build
   5. Configure in Claude Desktop or your MCP client
 
 AVAILABLE TOOLS:
-  Data Query APIs:
+
+  📊 Data Query APIs:
   - query_dataprime        - Run DataPrime queries on logs, metrics, and traces
   - query_lucene          - Run Lucene queries on indexed logs
   - submit_background_query - Submit long-running background queries
@@ -111,11 +118,36 @@ AVAILABLE TOOLS:
   - get_background_query_data - Retrieve results from background queries
   - cancel_background_query - Cancel running background queries
 
+  🚨 Alert Management:
+  - list_alert_definitions - List all alert definitions
+  - get_alert_definition  - Get specific alert definition
+  - create_alert_definition - Create new alert definition
+  - update_alert_definition - Update existing alert definition
+  - delete_alert_definition - Delete alert definition
+  - set_alert_active      - Enable/disable alert definition
+
+  📈 Dashboard Management:
+  - get_dashboard_catalog - List all dashboards
+  - get_dashboard        - Get specific dashboard
+  - create_dashboard     - Create new dashboard
+  - update_dashboard     - Update existing dashboard
+  - delete_dashboard     - Delete dashboard
+
+  🎯 Target Configuration:
+  - get_target           - Get current S3 target configuration
+  - set_target           - Configure S3 target for archiving
+  - validate_target      - Validate S3 target configuration
+
 USAGE:
   coralogix-mcp           - Start the MCP server
   coralogix-mcp --help    - Show this help message
 
-For more information, visit: https://coralogix.com/docs/direct-query-http-api/
+NOTES:
+  - This server includes only APIs confirmed to work in EU2 region
+  - Data usage, incidents, SLOs, policies, and team permissions are not available in EU2
+  - For other regions, additional APIs may be available
+
+For more information, visit: https://coralogix.com/docs/
 `);
     process.exit(0);
   }

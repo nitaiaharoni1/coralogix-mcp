@@ -53,7 +53,7 @@ npm install
 ```
 
 3. Set up environment variables:
-```bash
+   ```bash
 cp env.example .env
 ```
 
@@ -64,7 +64,7 @@ CORALOGIX_DOMAIN=your_domain_here
 ```
 
 4. Build the project:
-```bash
+   ```bash
 npm run build
 ```
 
@@ -116,7 +116,7 @@ query_dataprime({
 Execute Lucene queries on indexed logs.
 
 **Parameters:**
-- `query` (required): Lucene query string  
+- `query` (required): Lucene query string
 - `tier`: Data tier
 - `limit`: Maximum results
 - `startDate`: Start date
