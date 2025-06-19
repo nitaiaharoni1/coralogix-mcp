@@ -6,10 +6,11 @@ import { CoralogixClient } from '../services/coralogix-client.js';
  */
 export const getTargetTool: Tool = {
   name: 'get_target',
-  description: 'Get the current storage target configuration for log archives',
+  description: 'Get current S3 target configuration for log archiving and data export. Use this to: check current archive settings, verify S3 bucket configuration, review data retention policies, and understand archiving setup. Returns S3 bucket details, credentials, and archiving rules.',
   inputSchema: {
     type: 'object',
-    properties: {}
+    properties: {},
+    required: []
   }
 };
 
@@ -18,52 +19,38 @@ export const getTargetTool: Tool = {
  */
 export const setTargetTool: Tool = {
   name: 'set_target',
-  description: 'Set or update the storage target configuration for log archives',
+  description: 'Configure S3 target for archiving logs and data export to external storage. Use this to: set up log archiving to S3, configure data export destinations, establish data lake connections, and manage long-term data retention. Requires S3 bucket access credentials and permissions.',
   inputSchema: {
     type: 'object',
     properties: {
-      isActive: {
-        type: 'boolean',
-        description: 'Whether the target should be active'
+      bucket: {
+        type: 'string',
+        description: 'S3 bucket name where logs will be archived (e.g., "my-company-coralogix-archive")'
       },
-      s3: {
-        type: 'object',
-        properties: {
-          bucket: {
-            type: 'string',
-            description: 'S3 bucket name'
-          },
-          region: {
-            type: 'string',
-            description: 'S3 region (e.g., us-west-2)'
-          }
-        },
-        description: 'S3 target configuration'
+      region: {
+        type: 'string',
+        description: 'AWS region where the S3 bucket is located (e.g., "us-east-1", "eu-west-1")'
       },
-      ibmCos: {
+      prefix: {
+        type: 'string',
+        description: 'Optional S3 key prefix for organizing archived data (e.g., "logs/", "coralogix-archive/")'
+      },
+      credentials: {
         type: 'object',
-        properties: {
-          bucketCrn: {
-            type: 'string',
-            description: 'IBM COS bucket CRN'
-          },
-          endpoint: {
-            type: 'string',
-            description: 'IBM COS endpoint URL'
-          },
-          serviceCrn: {
-            type: 'string',
-            description: 'IBM COS service CRN'
-          },
-          bucketType: {
-            type: 'string',
-            description: 'IBM COS bucket type'
-          }
-        },
-        description: 'IBM COS target configuration'
+        description: 'AWS credentials configuration including access key, secret key, or IAM role for S3 access'
+      },
+      format: {
+        type: 'string',
+        enum: ['JSON', 'PARQUET'],
+        description: 'Archive format: JSON for human-readable format, PARQUET for optimized analytics format'
+      },
+      compression: {
+        type: 'string',
+        enum: ['GZIP', 'NONE'],
+        description: 'Compression type for archived files to reduce storage costs'
       }
     },
-    required: ['isActive']
+    required: ['bucket', 'region']
   }
 };
 
@@ -72,52 +59,28 @@ export const setTargetTool: Tool = {
  */
 export const validateTargetTool: Tool = {
   name: 'validate_target',
-  description: 'Validate a storage target configuration before setting it',
+  description: 'Validate S3 target configuration before applying changes. Use this to: test S3 connectivity and permissions, verify bucket access and write permissions, validate configuration settings, and prevent archiving failures. Recommended before setting up new targets.',
   inputSchema: {
     type: 'object',
     properties: {
-      isActive: {
-        type: 'boolean',
-        description: 'Whether the target should be active'
+      bucket: {
+        type: 'string',
+        description: 'S3 bucket name to validate access to'
       },
-      s3: {
-        type: 'object',
-        properties: {
-          bucket: {
-            type: 'string',
-            description: 'S3 bucket name to validate'
-          },
-          region: {
-            type: 'string',
-            description: 'S3 region to validate'
-          }
-        },
-        description: 'S3 target configuration to validate'
+      region: {
+        type: 'string',
+        description: 'AWS region of the S3 bucket'
       },
-      ibmCos: {
+      prefix: {
+        type: 'string',
+        description: 'S3 key prefix to validate write access to'
+      },
+      credentials: {
         type: 'object',
-        properties: {
-          bucketCrn: {
-            type: 'string',
-            description: 'IBM COS bucket CRN to validate'
-          },
-          endpoint: {
-            type: 'string',
-            description: 'IBM COS endpoint URL to validate'
-          },
-          serviceCrn: {
-            type: 'string',
-            description: 'IBM COS service CRN to validate'
-          },
-          bucketType: {
-            type: 'string',
-            description: 'IBM COS bucket type to validate'
-          }
-        },
-        description: 'IBM COS target configuration to validate'
+        description: 'AWS credentials to test for S3 access'
       }
     },
-    required: ['isActive']
+    required: ['bucket', 'region']
   }
 };
 
@@ -241,7 +204,7 @@ export async function handleTargetsTools(
   }
 }
 
-export const targetsTools = [
+export const targetsTools: Tool[] = [
   getTargetTool,
   setTargetTool,
   validateTargetTool

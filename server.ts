@@ -6,9 +6,12 @@
  * 
  * Working APIs in EU2 region:
  * - Query APIs (DataPrime, Lucene, Background queries)
- * - Alert Definitions
- * - Dashboard Catalog
- * - Target Management
+ * - Alert Definitions (create, read, update, delete alerts)
+ * - Dashboard Catalog (list, create, manage dashboards)
+ * - Target Management (S3 storage configuration)
+ * - Events2Metrics (convert logs/spans to metrics for cost optimization)
+ * - Rule Groups (manage parsing rules for log processing)
+ * - Enrichments (GeoIP, suspicious IP, AWS, custom enrichments)
  */
 
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
@@ -110,33 +113,53 @@ SETUP:
 
 AVAILABLE TOOLS:
 
-  📊 Data Query APIs:
-  - query_dataprime        - Run DataPrime queries on logs, metrics, and traces
-  - query_lucene          - Run Lucene queries on indexed logs
-  - submit_background_query - Submit long-running background queries
+  📊 DATA QUERY APIs (for viewing ACTUAL log/trace/metric data):
+  - query_dataprime        - Search ACTUAL LOG DATA with DataPrime syntax (use for "show me logs", "error logs", etc.)
+  - query_lucene          - Search ACTUAL LOG DATA with Lucene syntax (use for simple log searches)
+  - submit_background_query - Submit long-running queries for large datasets
   - get_background_query_status - Check status of background queries
   - get_background_query_data - Retrieve results from background queries
   - cancel_background_query - Cancel running background queries
 
-  🚨 Alert Management:
-  - list_alert_definitions - List all alert definitions
-  - get_alert_definition  - Get specific alert definition
-  - create_alert_definition - Create new alert definition
-  - update_alert_definition - Update existing alert definition
-  - delete_alert_definition - Delete alert definition
-  - set_alert_active      - Enable/disable alert definition
+  🚨 Alert Management (CONFIGURATION ONLY - not actual logs):
+  - list_alert_definitions - List all alert RULES/CONFIGURATION (not actual triggered alerts)
+  - get_alert_definition  - Get specific alert RULE configuration
+  - create_alert_definition - Create new alert RULE
+  - update_alert_definition - Update existing alert RULE
+  - delete_alert_definition - Delete alert RULE
+  - set_alert_active      - Enable/disable alert RULE
 
-  📈 Dashboard Management:
-  - get_dashboard_catalog - List all dashboards
-  - get_dashboard        - Get specific dashboard
+  📈 Dashboard Management (CONFIGURATION ONLY):
+  - get_dashboard_catalog - List all dashboard configurations
+  - get_dashboard        - Get specific dashboard configuration
   - create_dashboard     - Create new dashboard
   - update_dashboard     - Update existing dashboard
   - delete_dashboard     - Delete dashboard
 
-  🎯 Target Configuration:
+  🎯 Target Configuration (ARCHIVING SETUP):
   - get_target           - Get current S3 target configuration
   - set_target           - Configure S3 target for archiving
   - validate_target      - Validate S3 target configuration
+
+  📊 Events2Metrics (E2M) Configuration:
+  - list_events2metrics  - List all events2metrics configurations
+  - get_events2metrics   - Get specific E2M configuration
+  - get_events2metrics_limits - Get E2M limits and usage
+  - get_events2metrics_cardinality - Get labels cardinality for planning
+
+  📝 Rule Groups (PARSING CONFIGURATION):
+  - list_rule_groups     - List all parsing rule groups
+  - get_rule_group       - Get specific rule group
+  - get_rule_group_limits - Get rule group limits and usage
+
+  🔍 Enrichments (DATA ENHANCEMENT CONFIGURATION):
+  - list_enrichments     - List all configured enrichments
+  - get_enrichment_limits - Get enrichment limits and usage
+  - get_enrichment_settings - Get enrichment settings
+  - get_custom_enrichments - List custom enrichments (CSV-based)
+  - create_custom_enrichment - Create new custom enrichment
+  - update_custom_enrichment - Update custom enrichment
+  - delete_custom_enrichment - Delete custom enrichment
 
 USAGE:
   coralogix-mcp           - Start the MCP server
