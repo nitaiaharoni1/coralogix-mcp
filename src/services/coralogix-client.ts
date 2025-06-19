@@ -6,6 +6,7 @@ import axios, { AxiosInstance, AxiosResponse } from 'axios';
 import {
   QueryRequest,
   QueryResponse,
+  QueryMetadata,
   SubmitBackgroundQueryRequest,
   SubmitBackgroundQueryResponse,
   GetBackgroundQueryStatusRequest,
@@ -14,67 +15,55 @@ import {
   GetBackgroundQueryDataResponse,
   CancelBackgroundQueryRequest,
   CancelBackgroundQueryResponse,
-  DataUsageRequest,
-  DataUsageResponse,
-  QuotaInfo,
   DOMAIN_ENDPOINTS,
+  AlertDef,
   CreateAlertDefRequest,
   CreateAlertDefResponse,
   GetAlertDefResponse,
   ListAlertDefsResponse,
+  Dashboard,
   CreateDashboardRequest,
   CreateDashboardResponse,
   GetDashboardResponse,
-  GetDashboardCatalogResponse,
-  ListIncidentsRequest,
-  ListIncidentsResponse,
-  GetIncidentResponse,
-  AcknowledgeIncidentsRequest,
-  AcknowledgeIncidentsResponse,
-  CreatePolicyRequest,
-  CreatePolicyResponse,
-  GetPolicyResponse,
-  ListPoliciesResponse,
-  CreateSloRequest,
-  CreateSloResponse,
-  GetSloResponse,
-  ListSlosResponse,
-  SourceType,
+  GetDashboardCatalogResponse
 } from '../types/coralogix.js';
 
+let coralogixClient: CoralogixClient | null = null;
+
+/**
+ * Coralogix API Client
+ * Handles authentication and API requests to Coralogix services
+ * 
+ * Working APIs in EU2 region:
+ * - Query APIs (DataPrime, Lucene, Background queries)
+ * - Alert Definitions (/v3/alert-defs)
+ * - Dashboard Catalog (/v1/dashboards/catalog)
+ * - Target Management (/v2/target)
+ */
 export class CoralogixClient {
   private client: AxiosInstance;
   private baseUrl: string;
+  private domain: string;
 
   constructor(apiKey: string, domain: string) {
-    this.baseUrl = DOMAIN_ENDPOINTS[domain];
-    if (!this.baseUrl) {
-      throw new Error(`Unsupported Coralogix domain: ${domain}. Supported domains: ${Object.keys(DOMAIN_ENDPOINTS).join(', ')}`);
-    }
+    this.domain = domain;
+    this.baseUrl = DOMAIN_ENDPOINTS[domain] || `https://api.${domain}`;
 
+    // Create axios instance with default configuration
     this.client = axios.create({
       baseURL: this.baseUrl,
       headers: {
         'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
       },
-      timeout: 30000, // 30 seconds timeout
+      timeout: 30000, // 30 second timeout
     });
 
-    // Add response interceptor to handle NDJSON responses
+    // Add response interceptor for error handling
     this.client.interceptors.response.use(
-      (response: AxiosResponse) => {
-        // Handle NDJSON responses for query endpoints
-        if (response.headers['content-type']?.includes('application/x-ndjson') || 
-            typeof response.data === 'string' && response.data.includes('\n{')) {
-          const lines = response.data.split('\n').filter((line: string) => line.trim());
-          const parsedLines = lines.map((line: string) => JSON.parse(line));
-          response.data = parsedLines;
-        }
-        return response;
-      },
-      (error: any) => {
-        if (error.response?.status === 403) {
+      (response) => response,
+      (error) => {
+        if (error.response?.status === 401) {
           throw new Error('Authentication failed. Please check your API key and permissions.');
         }
         if (error.response?.status === 400) {
@@ -87,6 +76,8 @@ export class CoralogixClient {
       }
     );
   }
+
+  // ========== QUERY APIs ==========
 
   /**
    * Execute a DataPrime or Lucene query
@@ -160,138 +151,6 @@ export class CoralogixClient {
       return response.data;
     } catch (error) {
       throw this.handleError(error, 'Failed to cancel background query');
-    }
-  }
-
-  /**
-   * Generic HTTP request method
-   */
-  private async makeRequest(method: 'GET' | 'POST' | 'PUT' | 'DELETE', endpoint: string, data?: any): Promise<any> {
-    try {
-      const response = await this.client.request({
-        method,
-        url: endpoint,
-        data
-      });
-      return response.data;
-    } catch (error) {
-      throw this.handleError(error, `Failed to make ${method} request to ${endpoint}`);
-    }
-  }
-
-  /**
-   * Get detailed data usage information
-   */
-  async getDataUsage(filter: {
-    dateRange: {
-      fromDate: string;
-      toDate: string;
-    };
-    resolution?: string;
-    aggregate?: string[];
-  }): Promise<{ entries: any[] }> {
-    const params = new URLSearchParams();
-    params.append('dateRange.fromDate', filter.dateRange.fromDate);
-    params.append('dateRange.toDate', filter.dateRange.toDate);
-    if (filter.resolution) {
-      params.append('resolution', filter.resolution);
-    }
-    if (filter.aggregate) {
-      filter.aggregate.forEach(agg => params.append('aggregate', agg));
-    }
-
-    const response = await this.makeRequest('GET', `/v2/datausage?${params.toString()}`);
-    return response;
-  }
-
-  async getDailyUsageTokens(range?: string, dateRange?: { fromDate: string; toDate: string }): Promise<{ tokens: any[] }> {
-    const body: any = {};
-    if (range) {
-      body.range = range;
-    }
-    if (dateRange) {
-      body.dateRange = dateRange;
-    }
-
-    const response = await this.makeRequest('POST', '/v2/datausage/daily/evaluation_tokens', body);
-    return response;
-  }
-
-  async getDailyUsageGBs(range?: string, dateRange?: { fromDate: string; toDate: string }): Promise<{ gbs: any[] }> {
-    const body: any = {};
-    if (range) {
-      body.range = range;
-    }
-    if (dateRange) {
-      body.dateRange = dateRange;
-    }
-
-    const response = await this.makeRequest('POST', '/v2/datausage/daily/processed_gbs', body);
-    return response;
-  }
-
-  async getDailyUsageUnits(range?: string, dateRange?: { fromDate: string; toDate: string }): Promise<{ units: any[] }> {
-    const body: any = {};
-    if (range) {
-      body.range = range;
-    }
-    if (dateRange) {
-      body.dateRange = dateRange;
-    }
-
-    const response = await this.makeRequest('POST', '/v2/datausage/daily/units', body);
-    return response;
-  }
-
-  async getDataUsageExportStatus(): Promise<{ enabled: boolean }> {
-    const response = await this.makeRequest('GET', '/v2/datausage/exportstatus');
-    return response;
-  }
-
-  async updateDataUsageExportStatus(enabled: boolean): Promise<{ enabled: boolean }> {
-    const response = await this.makeRequest('POST', '/v2/datausage/exportstatus', { enabled });
-    return response;
-  }
-
-  /**
-   * Get current quota information
-   */
-  async getQuotaInfo(): Promise<QuotaInfo> {
-    try {
-      // Try to get quota information through the data usage API
-      const today = new Date();
-      const yesterday = new Date(today);
-      yesterday.setDate(yesterday.getDate() - 1);
-      
-      const request = {
-        resolution: '1d',
-        dateRange: {
-          fromDate: yesterday.toISOString(),
-          toDate: today.toISOString()
-        }
-      };
-
-      const usageData = await this.getDataUsage(request);
-      
-      // Calculate totals from usage data
-      let totalUnits = 0;
-      let totalSizeGb = 0;
-      
-      if (usageData.entries && usageData.entries.length > 0) {
-        for (const entry of usageData.entries) {
-          totalUnits += entry.units || 0;
-          totalSizeGb += entry.sizeGb || 0;
-        }
-      }
-
-      return {
-        usedQuotaGb: totalSizeGb,
-        units: {
-          usedUnits: totalUnits
-        }
-      };
-    } catch (error) {
-      throw this.handleError(error, 'Failed to get quota information');
     }
   }
 
@@ -448,378 +307,77 @@ export class CoralogixClient {
     }
   }
 
-  // ========== INCIDENTS API ==========
-
-  /**
-   * List incidents with filters
-   */
-  async listIncidents(request: ListIncidentsRequest): Promise<ListIncidentsResponse> {
-    try {
-      const response: AxiosResponse<ListIncidentsResponse> = await this.client.post(
-        '/mgmt/openapi/v1/incidents',
-        request
-      );
-      return response.data;
-    } catch (error) {
-      throw this.handleError(error, 'Failed to list incidents');
-    }
-  }
-
-  /**
-   * Get incident by ID
-   */
-  async getIncident(id: string): Promise<GetIncidentResponse> {
-    try {
-      const response: AxiosResponse<GetIncidentResponse> = await this.client.get(
-        `/mgmt/openapi/v1/incidents/${id}`
-      );
-      return response.data;
-    } catch (error) {
-      throw this.handleError(error, 'Failed to get incident');
-    }
-  }
-
-  /**
-   * Acknowledge incidents
-   */
-  async acknowledgeIncidents(request: AcknowledgeIncidentsRequest): Promise<AcknowledgeIncidentsResponse> {
-    try {
-      const response: AxiosResponse<AcknowledgeIncidentsResponse> = await this.client.post(
-        '/mgmt/openapi/v1/incidents:acknowledge',
-        request
-      );
-      return response.data;
-    } catch (error) {
-      throw this.handleError(error, 'Failed to acknowledge incidents');
-    }
-  }
-
-  /**
-   * Resolve incidents
-   */
-  async resolveIncidents(request: { incidentIds: string[] }): Promise<AcknowledgeIncidentsResponse> {
-    try {
-      const response: AxiosResponse<AcknowledgeIncidentsResponse> = await this.client.post(
-        '/mgmt/openapi/v1/incidents:resolve',
-        request
-      );
-      return response.data;
-    } catch (error) {
-      throw this.handleError(error, 'Failed to resolve incidents');
-    }
-  }
-
-  /**
-   * Close incidents
-   */
-  async closeIncidents(request: { incidentIds: string[] }): Promise<AcknowledgeIncidentsResponse> {
-    try {
-      const response: AxiosResponse<AcknowledgeIncidentsResponse> = await this.client.post(
-        '/mgmt/openapi/v1/incidents:close',
-        request
-      );
-      return response.data;
-    } catch (error) {
-      throw this.handleError(error, 'Failed to close incidents');
-    }
-  }
-
-  // ========== POLICIES API ==========
-
-  /**
-   * List policies
-   */
-  async listPolicies(enabledOnly: boolean, sourceType: SourceType): Promise<ListPoliciesResponse> {
-    try {
-      const response: AxiosResponse<ListPoliciesResponse> = await this.client.get(
-        `/mgmt/openapi/v1/policies?enabledOnly=${enabledOnly}&sourceType=${sourceType}`
-      );
-      return response.data;
-    } catch (error) {
-      throw this.handleError(error, 'Failed to list policies');
-    }
-  }
-
-  /**
-   * Create a new policy
-   */
-  async createPolicy(request: CreatePolicyRequest): Promise<CreatePolicyResponse> {
-    try {
-      const response: AxiosResponse<CreatePolicyResponse> = await this.client.post(
-        '/mgmt/openapi/v1/policies',
-        request
-      );
-      return response.data;
-    } catch (error) {
-      throw this.handleError(error, 'Failed to create policy');
-    }
-  }
-
-  /**
-   * Get policy by ID
-   */
-  async getPolicy(id: string): Promise<GetPolicyResponse> {
-    try {
-      const response: AxiosResponse<GetPolicyResponse> = await this.client.get(
-        `/mgmt/openapi/v1/policies/${id}`
-      );
-      return response.data;
-    } catch (error) {
-      throw this.handleError(error, 'Failed to get policy');
-    }
-  }
-
-  /**
-   * Update policy
-   */
-  async updatePolicy(request: any): Promise<CreatePolicyResponse> {
-    try {
-      const response: AxiosResponse<CreatePolicyResponse> = await this.client.put(
-        '/mgmt/openapi/v1/policies',
-        request
-      );
-      return response.data;
-    } catch (error) {
-      throw this.handleError(error, 'Failed to update policy');
-    }
-  }
-
-  /**
-   * Delete policy
-   */
-  async deletePolicy(id: string): Promise<void> {
-    try {
-      await this.client.delete(`/mgmt/openapi/v1/policies/${id}`);
-    } catch (error) {
-      throw this.handleError(error, 'Failed to delete policy');
-    }
-  }
-
-  async getPolicies(enabledOnly: boolean, sourceType: SourceType): Promise<ListPoliciesResponse> {
-    return this.listPolicies(enabledOnly, sourceType);
-  }
-
-  async togglePolicy(id: string, enabled: boolean): Promise<void> {
-    try {
-      await this.client.put(`/mgmt/openapi/v1/policies/${id}/toggle`, { enabled });
-    } catch (error) {
-      throw this.handleError(error, 'Failed to toggle policy');
-    }
-  }
-
-  async reorderPolicies(orders: Array<{ id: string; order: number }>, sourceType: SourceType): Promise<void> {
-    try {
-      await this.client.put('/mgmt/openapi/v1/policies/reorder', { orders, sourceType });
-    } catch (error) {
-      throw this.handleError(error, 'Failed to reorder policies');
-    }
-  }
-
-  // ========== SLOs API ==========
-
-  /**
-   * List SLOs
-   */
-  async listSlos(): Promise<ListSlosResponse> {
-    try {
-      const response: AxiosResponse<ListSlosResponse> = await this.client.get(
-        '/mgmt/openapi/v1/slo/slos'
-      );
-      return response.data;
-    } catch (error) {
-      throw this.handleError(error, 'Failed to list SLOs');
-    }
-  }
-
-  /**
-   * Create a new SLO
-   */
-  async createSlo(request: CreateSloRequest): Promise<CreateSloResponse> {
-    try {
-      const response: AxiosResponse<CreateSloResponse> = await this.client.post(
-        '/mgmt/openapi/v1/slo/slos',
-        request
-      );
-      return response.data;
-    } catch (error) {
-      throw this.handleError(error, 'Failed to create SLO');
-    }
-  }
-
-  /**
-   * Get SLO by ID
-   */
-  async getSlo(id: string): Promise<GetSloResponse> {
-    try {
-      const response: AxiosResponse<GetSloResponse> = await this.client.get(
-        `/mgmt/openapi/v1/slo/slos/${id}`
-      );
-      return response.data;
-    } catch (error) {
-      throw this.handleError(error, 'Failed to get SLO');
-    }
-  }
-
-  /**
-   * Update SLO
-   */
-  async updateSlo(request: any): Promise<CreateSloResponse> {
-    try {
-      const response: AxiosResponse<CreateSloResponse> = await this.client.put(
-        '/mgmt/openapi/v1/slo/slos',
-        request
-      );
-      return response.data;
-    } catch (error) {
-      throw this.handleError(error, 'Failed to update SLO');
-    }
-  }
-
-  /**
-   * Delete SLO
-   */
-  async deleteSlo(id: string): Promise<void> {
-    try {
-      await this.client.delete(`/mgmt/openapi/v1/slo/slos/${id}`);
-    } catch (error) {
-      throw this.handleError(error, 'Failed to delete SLO');
-    }
-  }
-
   // ========== TARGETS API ==========
 
+  /**
+   * Get current target configuration
+   */
   async getTarget(): Promise<any> {
     try {
-      const response = await this.client.get('/mgmt/openapi/v1/archiving/targets');
+      const response = await this.client.get('/mgmt/openapi/v2/target');
       return response.data;
     } catch (error) {
-      throw this.handleError(error, 'Failed to get target');
+      throw this.handleError(error, 'Failed to get target configuration');
     }
   }
 
+  /**
+   * Set target configuration
+   */
   async setTarget(request: any): Promise<any> {
     try {
-      const response = await this.client.post('/mgmt/openapi/v1/archiving/targets', request);
+      const response = await this.client.post('/mgmt/openapi/v2/target', request);
       return response.data;
     } catch (error) {
-      throw this.handleError(error, 'Failed to set target');
+      throw this.handleError(error, 'Failed to set target configuration');
     }
   }
 
+  /**
+   * Validate target configuration
+   */
   async validateTarget(request: any): Promise<any> {
     try {
-      const response = await this.client.post('/mgmt/openapi/v1/archiving/targets/validate', request);
+      const response = await this.client.post('/mgmt/openapi/v2/target:validate', request);
       return response.data;
     } catch (error) {
-      throw this.handleError(error, 'Failed to validate target');
+      throw this.handleError(error, 'Failed to validate target configuration');
     }
   }
 
-  // ========== TEAM PERMISSIONS API ==========
-
-  async getTeamGroups(teamId?: number): Promise<any> {
-    try {
-      const url = teamId ? `/mgmt/openapi/v1/team-groups?teamId=${teamId}` : '/mgmt/openapi/v1/team-groups';
-      const response = await this.client.get(url);
-      return response.data;
-    } catch (error) {
-      throw this.handleError(error, 'Failed to get team groups');
-    }
-  }
-
-  async createTeamGroup(request: any): Promise<any> {
-    try {
-      const response = await this.client.post('/mgmt/openapi/v1/team-groups', request);
-      return response.data;
-    } catch (error) {
-      throw this.handleError(error, 'Failed to create team group');
-    }
-  }
-
-  async updateTeamGroup(request: any): Promise<void> {
-    try {
-      await this.client.put('/mgmt/openapi/v1/team-groups', request);
-    } catch (error) {
-      throw this.handleError(error, 'Failed to update team group');
-    }
-  }
-
-  async getTeamGroup(groupId: number): Promise<any> {
-    try {
-      const response = await this.client.get(`/mgmt/openapi/v1/team-groups/${groupId}`);
-      return response.data;
-    } catch (error) {
-      throw this.handleError(error, 'Failed to get team group');
-    }
-  }
-
-  async deleteTeamGroup(groupId: number): Promise<void> {
-    try {
-      await this.client.delete(`/mgmt/openapi/v1/team-groups/${groupId}`);
-    } catch (error) {
-      throw this.handleError(error, 'Failed to delete team group');
-    }
-  }
-
-  async getTeamGroupUsers(groupId: number, pageSize?: number, pageToken?: string): Promise<any> {
-    try {
-      let url = `/mgmt/openapi/v1/team-groups/${groupId}/users`;
-      const params = new URLSearchParams();
-      if (pageSize) params.append('pageSize', pageSize.toString());
-      if (pageToken) params.append('pageToken', pageToken);
-      if (params.toString()) url += `?${params.toString()}`;
-      
-      const response = await this.client.get(url);
-      return response.data;
-    } catch (error) {
-      throw this.handleError(error, 'Failed to get team group users');
-    }
-  }
-
-  async addUsersToTeamGroup(groupId: number, userIds: string[]): Promise<any> {
-    try {
-      const response = await this.client.post(`/mgmt/openapi/v1/team-groups/${groupId}/users`, { userIds });
-      return response.data;
-    } catch (error) {
-      throw this.handleError(error, 'Failed to add users to team group');
-    }
-  }
-
-  async removeUsersFromTeamGroup(groupId: number): Promise<void> {
-    try {
-      await this.client.delete(`/mgmt/openapi/v1/team-groups/${groupId}/users`);
-    } catch (error) {
-      throw this.handleError(error, 'Failed to remove users from team group');
-    }
-  }
+  // ========== ERROR HANDLING ==========
 
   private handleError(error: any, context: string): Error {
     if (error.response) {
       const status = error.response.status;
-      const message = error.response.data?.message || error.message;
-      return new Error(`${context} (HTTP ${status}): ${message}`);
+      const message = error.response.data?.message || error.response.statusText;
+      
+      if (status === 404) {
+        return new Error(`${context}: API endpoint not found (HTTP 404). This endpoint may not be available in your region.`);
+      }
+      
+      return new Error(`${context}: ${message} (HTTP ${status})`);
     }
+    
     if (error.request) {
-      return new Error(`${context}: Network error - ${error.message}`);
+      return new Error(`${context}: No response received from server`);
     }
+    
     return new Error(`${context}: ${error.message}`);
   }
 }
 
-// Singleton instance
-let clientInstance: CoralogixClient | null = null;
-
 export function getCoralogixClient(): CoralogixClient {
-  if (!clientInstance) {
-    const apiKey = process.env.CORALOGIX_API_KEY;
-    const domain = process.env.CORALOGIX_DOMAIN;
+  const apiKey = process.env.CORALOGIX_API_KEY;
+  const domain = process.env.CORALOGIX_DOMAIN;
 
-    if (!apiKey || !domain) {
-      throw new Error('CORALOGIX_API_KEY and CORALOGIX_DOMAIN environment variables are required');
-    }
-
-    clientInstance = new CoralogixClient(apiKey, domain);
+  if (!apiKey || !domain) {
+    throw new Error('CORALOGIX_API_KEY and CORALOGIX_DOMAIN environment variables are required');
   }
 
-  return clientInstance;
+  if (!coralogixClient) {
+    coralogixClient = new CoralogixClient(apiKey, domain);
+  }
+
+  return coralogixClient;
 } 
