@@ -8,6 +8,9 @@ import { queryTools, handleQueryTool } from './query.js';
 import { alertTools, handleAlertTool } from './alerts.js';
 import { dashboardTools, handleDashboardTool } from './dashboards.js';
 import { targetsTools, handleTargetsTools } from './targets.js';
+import { events2metricsTools, handleEvents2MetricsTool } from './events2metrics.js';
+import { ruleGroupsTools, handleRuleGroupsTool } from './rulegroups.js';
+import { enrichmentsTools, handleEnrichmentsTool } from './enrichments.js';
 
 // Note: The following tools are not available in EU2 region (return 404):
 // - Data Usage/Billing tools (/v2/datausage endpoints)
@@ -15,6 +18,10 @@ import { targetsTools, handleTargetsTools } from './targets.js';
 // - SLOs tools (/v1/slo/slos endpoints)
 // - Policies tools (/v2/policies endpoints)
 // - Team Permissions tools (/v1/teams/groups endpoints)
+// - Metrics TCO tools (/metrics-tco endpoints)
+// - Metrics Archive tools (/v1/metrics-archive endpoints)
+// - Outgoing Webhooks tools (/v1/outgoing-webhooks endpoints)
+// - Recording Rules tools (/v1/rule-group-sets endpoints)
 
 // Combine all working tool definitions
 export function getToolDefinitions(): Tool[] {
@@ -22,7 +29,10 @@ export function getToolDefinitions(): Tool[] {
     ...queryTools,        // ✅ DataPrime & Lucene queries, background queries
     ...alertTools,        // ✅ Alert definitions management
     ...dashboardTools,    // ✅ Dashboard catalog and management
-    ...targetsTools       // ✅ S3 target configuration
+    ...targetsTools,      // ✅ S3 target configuration
+    ...events2metricsTools,
+    ...ruleGroupsTools,
+    ...enrichmentsTools
   ];
 }
 
@@ -46,6 +56,12 @@ export async function handleToolCall(request: CallToolRequest): Promise<{
     } else if (targetsTools.some(tool => tool.name === name)) {
       const { getCoralogixClient } = await import('../services/coralogix-client.js');
       result = await handleTargetsTools(name, args || {}, getCoralogixClient());
+    } else if (events2metricsTools.some(tool => tool.name === name)) {
+      result = await handleEvents2MetricsTool(request);
+    } else if (ruleGroupsTools.some(tool => tool.name === name)) {
+      result = await handleRuleGroupsTool(request);
+    } else if (enrichmentsTools.some(tool => tool.name === name)) {
+      result = await handleEnrichmentsTool(request);
     } else {
       throw new Error(`Unknown tool: ${name}`);
     }

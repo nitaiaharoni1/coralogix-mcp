@@ -10,8 +10,8 @@ import { AlertDefPriority, AlertDefType, CreateAlertDefRequest } from '../types/
 // Tool definitions
 export const alertTools: Tool[] = [
   {
-    name: 'list_alerts',
-    description: 'List all alert definitions in your Coralogix account. Shows active alerts, their priorities, types, and current status.',
+    name: 'list_alert_definitions',
+    description: '⚠️ MANAGES ALERT CONFIGURATION - NOT ACTUAL LOGS. List all alert definitions/rules in your Coralogix account. This shows alert CONFIGURATION and RULES, not actual triggered alerts or log data. Use this to: get an overview of all monitoring alert rules, find specific alert definitions by name, check alert rule configurations, and understand your current alerting setup. Returns alert rule IDs, names, types, enabled status, and priority levels. If user asks for "logs" or "error logs", use query_dataprime or query_lucene instead.',
     inputSchema: {
       type: 'object',
       properties: {},
@@ -19,128 +19,111 @@ export const alertTools: Tool[] = [
     }
   },
   {
-    name: 'create_alert',
-    description: 'Create a new alert definition for monitoring logs, metrics, or traces. Supports various alert types including immediate, threshold, and anomaly alerts.',
+    name: 'get_alert_definition',
+    description: '⚠️ MANAGES ALERT CONFIGURATION - NOT ACTUAL LOGS. Get detailed configuration of a specific alert definition/rule by ID. This shows alert RULE configuration, not actual triggered alerts or log data. Use this to: examine alert conditions and thresholds, review notification settings, understand alert logic, and debug alert behavior. Returns complete alert rule configuration including filters, conditions, and notification groups. If user asks for "logs" or "error logs", use query_dataprime or query_lucene instead.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        id: {
+          type: 'string',
+          description: 'The unique identifier of the alert definition to retrieve. Get this from list_alert_definitions.'
+        }
+      },
+      required: ['id']
+    }
+  },
+  {
+    name: 'create_alert_definition',
+    description: '⚠️ CREATES ALERT CONFIGURATION - NOT FOR VIEWING LOGS. Create a new alert definition/rule to monitor logs, metrics, or traces. This creates monitoring RULES, not for viewing actual log data. Use this to: set up error monitoring rules, performance alert rules, SLA monitoring rules, anomaly detection rules, and custom business logic alert rules. Supports various alert types including immediate, threshold, ratio, and anomaly alerts. If user asks for "logs" or "error logs", use query_dataprime or query_lucene instead.',
     inputSchema: {
       type: 'object',
       properties: {
         name: {
           type: 'string',
-          description: 'Name of the alert (e.g., "High Error Rate Alert", "CPU Usage Alert")'
+          description: 'A descriptive name for the alert rule (e.g., "High Error Rate - Payment Service", "Database Connection Timeout")'
         },
         description: {
           type: 'string',
-          description: 'Detailed description of what this alert monitors'
+          description: 'Detailed description of what this alert rule monitors and when it should trigger'
         },
         priority: {
           type: 'string',
           enum: ['ALERT_DEF_PRIORITY_P1', 'ALERT_DEF_PRIORITY_P2', 'ALERT_DEF_PRIORITY_P3', 'ALERT_DEF_PRIORITY_P4', 'ALERT_DEF_PRIORITY_P5_OR_UNSPECIFIED'],
-          description: 'Alert priority level (P1 = Critical, P2 = High, P3 = Medium, P4 = Low, P5 = Info)',
-          default: 'ALERT_DEF_PRIORITY_P3'
-        },
-        type: {
-          type: 'string',
-          enum: ['ALERT_DEF_TYPE_LOGS_IMMEDIATE_OR_UNSPECIFIED', 'ALERT_DEF_TYPE_LOGS_THRESHOLD', 'ALERT_DEF_TYPE_LOGS_ANOMALY', 'ALERT_DEF_TYPE_METRIC_THRESHOLD', 'ALERT_DEF_TYPE_FLOW'],
-          description: 'Type of alert to create',
-          default: 'ALERT_DEF_TYPE_LOGS_IMMEDIATE_OR_UNSPECIFIED'
+          description: 'Alert priority level. P1 is highest (critical), P5 is lowest (informational)'
         },
         enabled: {
           type: 'boolean',
-          description: 'Whether the alert should be enabled immediately',
-          default: true
+          description: 'Whether the alert rule should be active immediately after creation. Default is true.'
         },
-        groupByKeys: {
-          type: 'array',
-          items: { type: 'string' },
-          description: 'Fields to group alerts by (e.g., ["application", "severity"])'
+        type: {
+          type: 'string',
+          enum: ['ALERT_DEF_TYPE_LOGS_IMMEDIATE_OR_UNSPECIFIED', 'ALERT_DEF_TYPE_LOGS_THRESHOLD', 'ALERT_DEF_TYPE_LOGS_ANOMALY', 'ALERT_DEF_TYPE_METRIC_THRESHOLD', 'ALERT_DEF_TYPE_TRACING_IMMEDIATE'],
+          description: 'Type of alert rule: LOGS_IMMEDIATE for instant log alerts, LOGS_THRESHOLD for count-based alerts, LOGS_ANOMALY for anomaly detection, METRIC_THRESHOLD for metric alerts, TRACING_IMMEDIATE for trace alerts'
         },
-        entityLabels: {
+        logsFilter: {
           type: 'object',
-          description: 'Key-value pairs for labeling and categorizing the alert'
+          description: 'Log filter configuration for log-based alert rules. Include query, severity filters, application filters, etc.'
+        },
+        metricFilter: {
+          type: 'object',
+          description: 'Metric filter configuration for metric-based alert rules. Include metric name, labels, and aggregation settings.'
+        },
+        notificationGroup: {
+          type: 'object',
+          description: 'Notification configuration including webhooks, email groups, and routing rules for when alert triggers.'
         }
       },
       required: ['name', 'priority', 'type']
     }
   },
   {
-    name: 'get_alert',
-    description: 'Get detailed information about a specific alert definition by its ID.',
+    name: 'update_alert_definition',
+    description: '⚠️ UPDATES ALERT CONFIGURATION - NOT FOR VIEWING LOGS. Update an existing alert definition/rule configuration. This modifies alert RULES, not for viewing actual log data. Use this to: modify alert conditions, change thresholds, update notification settings, adjust filters, and fine-tune alert behavior. Requires the complete alert configuration. If user asks for "logs" or "error logs", use query_dataprime or query_lucene instead.',
     inputSchema: {
       type: 'object',
       properties: {
-        alertId: {
-          type: 'string',
-          description: 'The unique identifier of the alert definition'
-        }
-      },
-      required: ['alertId']
-    }
-  },
-  {
-    name: 'update_alert',
-    description: 'Update an existing alert definition. You can modify the name, description, priority, enabled status, and other properties.',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        alertId: {
+        id: {
           type: 'string',
           description: 'The unique identifier of the alert definition to update'
         },
-        name: {
-          type: 'string',
-          description: 'Updated name of the alert'
-        },
-        description: {
-          type: 'string',
-          description: 'Updated description of the alert'
-        },
-        priority: {
-          type: 'string',
-          enum: ['ALERT_DEF_PRIORITY_P1', 'ALERT_DEF_PRIORITY_P2', 'ALERT_DEF_PRIORITY_P3', 'ALERT_DEF_PRIORITY_P4', 'ALERT_DEF_PRIORITY_P5_OR_UNSPECIFIED'],
-          description: 'Updated alert priority level'
-        },
-        enabled: {
-          type: 'boolean',
-          description: 'Whether the alert should be enabled or disabled'
-        },
-        entityLabels: {
+        alertDefProperties: {
           type: 'object',
-          description: 'Updated key-value pairs for labeling and categorizing the alert'
+          description: 'Complete alert definition configuration with all properties. Use get_alert_definition first to get current config, then modify as needed.'
         }
       },
-      required: ['alertId']
+      required: ['id', 'alertDefProperties']
     }
   },
   {
-    name: 'delete_alert',
-    description: 'Delete an alert definition permanently. This action cannot be undone.',
+    name: 'delete_alert_definition',
+    description: '⚠️ DELETES ALERT CONFIGURATION - NOT FOR VIEWING LOGS. Permanently delete an alert definition/rule. This removes monitoring RULES, not for viewing actual log data. Use this to: remove obsolete alert rules, clean up unused monitoring rules, and manage alert lifecycle. This action cannot be undone. If user asks for "logs" or "error logs", use query_dataprime or query_lucene instead.',
     inputSchema: {
       type: 'object',
       properties: {
-        alertId: {
+        id: {
           type: 'string',
-          description: 'The unique identifier of the alert definition to delete'
+          description: 'The unique identifier of the alert definition to delete. Get this from list_alert_definitions.'
         }
       },
-      required: ['alertId']
+      required: ['id']
     }
   },
   {
-    name: 'enable_alert',
-    description: 'Enable or disable an alert definition without deleting it.',
+    name: 'set_alert_active',
+    description: '⚠️ MANAGES ALERT CONFIGURATION - NOT FOR VIEWING LOGS. Enable or disable an alert definition/rule without deleting it. This controls monitoring RULES, not for viewing actual log data. Use this to: temporarily disable noisy alert rules, enable alert rules after maintenance, manage alert schedules, and control alert activation. Disabled alert rules do not trigger notifications. If user asks for "logs" or "error logs", use query_dataprime or query_lucene instead.',
     inputSchema: {
       type: 'object',
       properties: {
-        alertId: {
+        id: {
           type: 'string',
-          description: 'The unique identifier of the alert definition'
+          description: 'The unique identifier of the alert definition to enable/disable'
         },
-        enabled: {
+        active: {
           type: 'boolean',
-          description: 'Set to true to enable the alert, false to disable it'
+          description: 'Set to true to enable the alert rule (it will start monitoring), false to disable it (stops monitoring)'
         }
       },
-      required: ['alertId', 'enabled']
+      required: ['id', 'active']
     }
   }
 ];
@@ -150,30 +133,30 @@ export async function handleAlertTool(name: string, args: any): Promise<string> 
   const client = getCoralogixClient();
 
   switch (name) {
-    case 'list_alerts':
-      return await handleListAlerts(client);
+    case 'list_alert_definitions':
+      return await handleListAlertDefinitions(client);
     
-    case 'create_alert':
-      return await handleCreateAlert(client, args);
+    case 'get_alert_definition':
+      return await handleGetAlertDefinition(client, args);
     
-    case 'get_alert':
-      return await handleGetAlert(client, args);
+    case 'create_alert_definition':
+      return await handleCreateAlertDefinition(client, args);
     
-    case 'update_alert':
-      return await handleUpdateAlert(client, args);
+    case 'update_alert_definition':
+      return await handleUpdateAlertDefinition(client, args);
     
-    case 'delete_alert':
-      return await handleDeleteAlert(client, args);
+    case 'delete_alert_definition':
+      return await handleDeleteAlertDefinition(client, args);
     
-    case 'enable_alert':
-      return await handleEnableAlert(client, args);
+    case 'set_alert_active':
+      return await handleSetAlertActive(client, args);
     
     default:
       throw new Error(`Unknown alert tool: ${name}`);
   }
 }
 
-async function handleListAlerts(client: any): Promise<string> {
+async function handleListAlertDefinitions(client: any): Promise<string> {
   try {
     const response = await client.listAlertDefs();
     
@@ -221,45 +204,10 @@ async function handleListAlerts(client: any): Promise<string> {
   }
 }
 
-async function handleCreateAlert(client: any, args: any): Promise<string> {
+async function handleGetAlertDefinition(client: any, args: any): Promise<string> {
   try {
-    const { name, description, priority, type, enabled = true, groupByKeys, entityLabels } = args;
-
-    const request: CreateAlertDefRequest = {
-      alertDefProperties: {
-        name,
-        description,
-        priority: priority as AlertDefPriority,
-        type: type as AlertDefType,
-        enabled,
-        ...(groupByKeys && { groupByKeys }),
-        ...(entityLabels && { entityLabels })
-      }
-    };
-
-    const response = await client.createAlertDef(request);
-    
-    let result = `✅ Alert definition created successfully!\n\n`;
-    result += `Alert ID: ${response.alertDef.id}\n`;
-    result += `Name: ${response.alertDef.alertDefProperties.name}\n`;
-    result += `Priority: ${getPriorityLabel(response.alertDef.alertDefProperties.priority)}\n`;
-    result += `Type: ${getTypeLabel(response.alertDef.alertDefProperties.type)}\n`;
-    result += `Status: ${response.alertDef.alertDefProperties.enabled ? 'Enabled' : 'Disabled'}\n`;
-    
-    if (response.alertDef.createdTime) {
-      result += `Created: ${new Date(response.alertDef.createdTime).toLocaleString()}\n`;
-    }
-
-    return result;
-  } catch (error) {
-    throw new Error(`Failed to create alert: ${error instanceof Error ? error.message : 'Unknown error'}`);
-  }
-}
-
-async function handleGetAlert(client: any, args: any): Promise<string> {
-  try {
-    const { alertId } = args;
-    const response = await client.getAlertDef(alertId);
+    const { id } = args;
+    const response = await client.getAlertDef(id);
     
     const alert = response.alertDef;
     const props = alert.alertDefProperties;
@@ -306,21 +254,57 @@ async function handleGetAlert(client: any, args: any): Promise<string> {
   }
 }
 
-async function handleUpdateAlert(client: any, args: any): Promise<string> {
+async function handleCreateAlertDefinition(client: any, args: any): Promise<string> {
   try {
-    const { alertId, ...updates } = args;
+    const { name, description, priority, type, enabled = true, logsFilter, metricFilter, notificationGroup } = args;
+
+    const request: CreateAlertDefRequest = {
+      alertDefProperties: {
+        name,
+        description,
+        priority: priority as AlertDefPriority,
+        type: type as AlertDefType,
+        enabled,
+        ...(logsFilter && { logsFilter }),
+        ...(metricFilter && { metricFilter }),
+        ...(notificationGroup && { notificationGroup })
+      }
+    };
+
+    const response = await client.createAlertDef(request);
+    
+    let result = `✅ Alert definition created successfully!\n\n`;
+    result += `Alert ID: ${response.alertDef.id}\n`;
+    result += `Name: ${response.alertDef.alertDefProperties.name}\n`;
+    result += `Priority: ${getPriorityLabel(response.alertDef.alertDefProperties.priority)}\n`;
+    result += `Type: ${getTypeLabel(response.alertDef.alertDefProperties.type)}\n`;
+    result += `Status: ${response.alertDef.alertDefProperties.enabled ? 'Enabled' : 'Disabled'}\n`;
+    
+    if (response.alertDef.createdTime) {
+      result += `Created: ${new Date(response.alertDef.createdTime).toLocaleString()}\n`;
+    }
+
+    return result;
+  } catch (error) {
+    throw new Error(`Failed to create alert: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+}
+
+async function handleUpdateAlertDefinition(client: any, args: any): Promise<string> {
+  try {
+    const { id, alertDefProperties } = args;
     
     // First get the current alert to merge with updates
-    const currentAlert = await client.getAlertDef(alertId);
+    const currentAlert = await client.getAlertDef(id);
     const currentProps = currentAlert.alertDef.alertDefProperties;
     
     const updatedProps = {
       ...currentProps,
-      ...updates
+      ...alertDefProperties
     };
     
     const request = {
-      id: alertId,
+      id,
       alertDefProperties: updatedProps
     };
     
@@ -342,30 +326,30 @@ async function handleUpdateAlert(client: any, args: any): Promise<string> {
   }
 }
 
-async function handleDeleteAlert(client: any, args: any): Promise<string> {
+async function handleDeleteAlertDefinition(client: any, args: any): Promise<string> {
   try {
-    const { alertId } = args;
+    const { id } = args;
     
     // Get alert name before deleting for confirmation
-    const alert = await client.getAlertDef(alertId);
+    const alert = await client.getAlertDef(id);
     const alertName = alert.alertDef.alertDefProperties.name;
     
-    await client.deleteAlertDef(alertId);
+    await client.deleteAlertDef(id);
     
-    return `✅ Alert definition "${alertName}" (ID: ${alertId}) has been deleted successfully.`;
+    return `✅ Alert definition "${alertName}" (ID: ${id}) has been deleted successfully.`;
   } catch (error) {
     throw new Error(`Failed to delete alert: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
 
-async function handleEnableAlert(client: any, args: any): Promise<string> {
+async function handleSetAlertActive(client: any, args: any): Promise<string> {
   try {
-    const { alertId, enabled } = args;
+    const { id, active } = args;
     
-    await client.setAlertDefActive(alertId, enabled);
+    await client.setAlertDefActive(id, active);
     
-    const action = enabled ? 'enabled' : 'disabled';
-    return `✅ Alert definition (ID: ${alertId}) has been ${action} successfully.`;
+    const action = active ? 'enabled' : 'disabled';
+    return `✅ Alert definition (ID: ${id}) has been ${action} successfully.`;
   } catch (error) {
     throw new Error(`Failed to enable/disable alert: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
@@ -389,7 +373,7 @@ function getTypeLabel(type: string): string {
     'ALERT_DEF_TYPE_LOGS_THRESHOLD': 'Logs Threshold',
     'ALERT_DEF_TYPE_LOGS_ANOMALY': 'Logs Anomaly',
     'ALERT_DEF_TYPE_METRIC_THRESHOLD': 'Metric Threshold',
-    'ALERT_DEF_TYPE_FLOW': 'Flow Alert'
+    'ALERT_DEF_TYPE_TRACING_IMMEDIATE': 'Trace Alert'
   };
   return typeLabels[type] || type;
 } 

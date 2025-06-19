@@ -10,8 +10,8 @@ import { CreateDashboardRequest, Dashboard } from '../types/coralogix.js';
 // Tool definitions
 export const dashboardTools: Tool[] = [
   {
-    name: 'list_dashboards',
-    description: 'List all dashboards in your Coralogix account. Shows dashboard catalog with names, descriptions, and folder organization.',
+    name: 'get_dashboard_catalog',
+    description: 'List all dashboards in your Coralogix account with metadata. Use this to: discover available dashboards, find dashboards by name or folder, get dashboard IDs for detailed access, and understand your dashboard organization. Returns dashboard names, IDs, folder structure, creation dates, and access permissions.',
     inputSchema: {
       type: 'object',
       properties: {},
@@ -19,54 +19,60 @@ export const dashboardTools: Tool[] = [
     }
   },
   {
-    name: 'create_dashboard',
-    description: 'Create a new dashboard for monitoring and visualization. You can create basic dashboards and add widgets later through the UI.',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        name: {
-          type: 'string',
-          description: 'Name of the dashboard (e.g., "Application Performance", "Error Monitoring")'
-        },
-        description: {
-          type: 'string',
-          description: 'Description of what this dashboard monitors and displays'
-        },
-        folderId: {
-          type: 'string',
-          description: 'Optional folder ID to organize the dashboard'
-        },
-        relativeTimeFrame: {
-          type: 'string',
-          description: 'Default time frame for the dashboard (e.g., "1h", "24h", "7d")',
-          default: '24h'
-        },
-        isLocked: {
-          type: 'boolean',
-          description: 'Whether the dashboard should be locked to prevent accidental changes',
-          default: false
-        }
-      },
-      required: ['name']
-    }
-  },
-  {
     name: 'get_dashboard',
-    description: 'Get detailed information about a specific dashboard by its ID, including layout, widgets, and configuration.',
+    description: 'Get detailed configuration and layout of a specific dashboard by ID. Use this to: examine dashboard widgets and visualizations, understand data sources and queries, review dashboard layout and settings, and analyze dashboard structure. Returns complete dashboard definition including all widgets, queries, and configuration.',
     inputSchema: {
       type: 'object',
       properties: {
         dashboardId: {
           type: 'string',
-          description: 'The unique identifier of the dashboard'
+          description: 'The unique identifier of the dashboard to retrieve. Get this from get_dashboard_catalog.'
         }
       },
       required: ['dashboardId']
     }
   },
   {
+    name: 'create_dashboard',
+    description: 'Create a new dashboard with custom widgets and visualizations. Use this to: build monitoring dashboards, create executive reports, set up operational views, and design custom analytics displays. Supports various widget types including charts, tables, logs, metrics, and traces.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        name: {
+          type: 'string',
+          description: 'A descriptive name for the dashboard (e.g., "Application Performance Overview", "Error Analysis Dashboard")'
+        },
+        description: {
+          type: 'string',
+          description: 'Detailed description of the dashboard purpose and contents'
+        },
+        layout: {
+          type: 'object',
+          description: 'Dashboard layout configuration including sections, widget positions, and responsive settings'
+        },
+        variables: {
+          type: 'array',
+          description: 'Dashboard variables for dynamic filtering (e.g., time range, application name, environment)'
+        },
+        filters: {
+          type: 'object',
+          description: 'Global dashboard filters that apply to all widgets'
+        },
+        widgets: {
+          type: 'array',
+          description: 'Array of widget configurations including charts, tables, logs panels, and metric displays'
+        },
+        folder: {
+          type: 'object',
+          description: 'Folder organization settings to categorize the dashboard'
+        }
+      },
+      required: ['name']
+    }
+  },
+  {
     name: 'update_dashboard',
-    description: 'Update an existing dashboard. You can modify the name, description, time frame, and other properties.',
+    description: 'Update an existing dashboard configuration, widgets, or layout. Use this to: modify dashboard content, add or remove widgets, update queries and filters, change layout and styling, and maintain dashboard accuracy. Requires complete dashboard configuration.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -74,35 +80,23 @@ export const dashboardTools: Tool[] = [
           type: 'string',
           description: 'The unique identifier of the dashboard to update'
         },
-        name: {
-          type: 'string',
-          description: 'Updated name of the dashboard'
-        },
-        description: {
-          type: 'string',
-          description: 'Updated description of the dashboard'
-        },
-        relativeTimeFrame: {
-          type: 'string',
-          description: 'Updated default time frame for the dashboard'
-        },
-        isLocked: {
-          type: 'boolean',
-          description: 'Whether the dashboard should be locked'
+        dashboard: {
+          type: 'object',
+          description: 'Complete dashboard configuration with all properties. Use get_dashboard first to get current config, then modify as needed.'
         }
       },
-      required: ['dashboardId']
+      required: ['dashboardId', 'dashboard']
     }
   },
   {
     name: 'delete_dashboard',
-    description: 'Delete a dashboard permanently. This action cannot be undone and will remove all widgets and configuration.',
+    description: 'Permanently delete a dashboard from your account. Use this to: remove obsolete dashboards, clean up unused visualizations, and manage dashboard lifecycle. This action cannot be undone and will remove all dashboard configuration and history.',
     inputSchema: {
       type: 'object',
       properties: {
         dashboardId: {
           type: 'string',
-          description: 'The unique identifier of the dashboard to delete'
+          description: 'The unique identifier of the dashboard to delete. Get this from get_dashboard_catalog.'
         }
       },
       required: ['dashboardId']
@@ -115,14 +109,14 @@ export async function handleDashboardTool(name: string, args: any): Promise<stri
   const client = getCoralogixClient();
 
   switch (name) {
-    case 'list_dashboards':
-      return await handleListDashboards(client);
-    
-    case 'create_dashboard':
-      return await handleCreateDashboard(client, args);
+    case 'get_dashboard_catalog':
+      return await handleGetDashboardCatalog(client);
     
     case 'get_dashboard':
       return await handleGetDashboard(client, args);
+    
+    case 'create_dashboard':
+      return await handleCreateDashboard(client, args);
     
     case 'update_dashboard':
       return await handleUpdateDashboard(client, args);
@@ -135,7 +129,7 @@ export async function handleDashboardTool(name: string, args: any): Promise<stri
   }
 }
 
-async function handleListDashboards(client: any): Promise<string> {
+async function handleGetDashboardCatalog(client: any): Promise<string> {
   try {
     const response = await client.getDashboardCatalog();
     
@@ -179,56 +173,6 @@ async function handleListDashboards(client: any): Promise<string> {
     return result;
   } catch (error) {
     throw new Error(`Failed to list dashboards: ${error instanceof Error ? error.message : 'Unknown error'}`);
-  }
-}
-
-async function handleCreateDashboard(client: any, args: any): Promise<string> {
-  try {
-    const { name, description, folderId, relativeTimeFrame = '24h', isLocked = false } = args;
-
-    const dashboard: Dashboard = {
-      name,
-      description,
-      relativeTimeFrame,
-      layout: {
-        sections: []  // Empty layout - user can add widgets later
-      },
-      variables: [],
-      filters: [],
-      annotations: []
-    };
-
-    if (folderId) {
-      dashboard.folderId = { id: folderId };
-    }
-
-    const request: CreateDashboardRequest = {
-      requestId: generateRequestId(),
-      dashboard,
-      isLocked
-    };
-
-    const response = await client.createDashboard(request);
-    
-    let result = `✅ Dashboard created successfully!\n\n`;
-    result += `Dashboard ID: ${response.dashboardId}\n`;
-    result += `Name: ${name}\n`;
-    result += `Time Frame: ${relativeTimeFrame}\n`;
-    result += `Locked: ${isLocked ? 'Yes' : 'No'}\n`;
-    
-    if (description) {
-      result += `Description: ${description}\n`;
-    }
-    
-    if (folderId) {
-      result += `Folder ID: ${folderId}\n`;
-    }
-
-    result += `\n📝 Note: You can now add widgets and configure the dashboard through the Coralogix UI.`;
-
-    return result;
-  } catch (error) {
-    throw new Error(`Failed to create dashboard: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
 
@@ -308,9 +252,59 @@ async function handleGetDashboard(client: any, args: any): Promise<string> {
   }
 }
 
+async function handleCreateDashboard(client: any, args: any): Promise<string> {
+  try {
+    const { name, description, layout, variables, filters, widgets, folder } = args;
+
+    const dashboard: Dashboard = {
+      name,
+      description: description || '',
+      relativeTimeFrame: '24h',
+      layout: layout || {
+        sections: []  // Empty layout - user can add widgets later
+      },
+      variables: variables || [],
+      filters: filters || [],
+      annotations: []
+    };
+
+    if (folder) {
+      dashboard.folderId = { id: folder.id };
+    }
+
+    const request: CreateDashboardRequest = {
+      requestId: generateRequestId(),
+      dashboard,
+      isLocked: false
+    };
+
+    const response = await client.createDashboard(request);
+    
+    let result = `✅ Dashboard created successfully!\n\n`;
+    result += `Dashboard ID: ${response.dashboardId}\n`;
+    result += `Name: ${name}\n`;
+    result += `Time Frame: ${dashboard.relativeTimeFrame}\n`;
+    result += `Locked: No\n`;
+    
+    if (description) {
+      result += `Description: ${description}\n`;
+    }
+    
+    if (folder) {
+      result += `Folder ID: ${folder.id}\n`;
+    }
+
+    result += `\n📝 Note: You can now add widgets and configure the dashboard through the Coralogix UI.`;
+
+    return result;
+  } catch (error) {
+    throw new Error(`Failed to create dashboard: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+}
+
 async function handleUpdateDashboard(client: any, args: any): Promise<string> {
   try {
-    const { dashboardId, ...updates } = args;
+    const { dashboardId, dashboard } = args;
     
     // First get the current dashboard to merge with updates
     const currentDashboard = await client.getDashboard(dashboardId);
@@ -318,7 +312,7 @@ async function handleUpdateDashboard(client: any, args: any): Promise<string> {
     
     const updatedDashboard: Dashboard = {
       ...current,
-      ...updates,
+      ...dashboard,
       id: dashboardId
     };
     
@@ -334,12 +328,12 @@ async function handleUpdateDashboard(client: any, args: any): Promise<string> {
     result += `Dashboard ID: ${dashboardId}\n`;
     result += `Name: ${updatedDashboard.name}\n`;
     
-    if (updates.description) {
-      result += `Description: ${updates.description}\n`;
+    if (updatedDashboard.description) {
+      result += `Description: ${updatedDashboard.description}\n`;
     }
     
-    if (updates.relativeTimeFrame) {
-      result += `Time Frame: ${updates.relativeTimeFrame}\n`;
+    if (updatedDashboard.relativeTimeFrame) {
+      result += `Time Frame: ${updatedDashboard.relativeTimeFrame}\n`;
     }
 
     return result;

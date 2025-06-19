@@ -11,37 +11,30 @@ import { QueryRequest, QueryMetadata, QuerySyntax, Tier } from '../types/coralog
 export const queryTools: Tool[] = [
   {
     name: 'query_dataprime',
-    description: 'Execute DataPrime queries on logs, metrics, and traces. DataPrime is Coralogix\'s piped syntax language for data transformations and aggregations.',
+    description: 'Execute DataPrime queries to search and analyze ACTUAL LOG DATA, traces, and spans in real-time. Use this tool when the user asks for "logs", "error logs", "recent logs", "show me logs", etc. This returns actual log entries, not configuration. Perfect for: finding the last N error logs, investigating specific errors, searching log messages by content, filtering by severity levels (ERROR, WARN, INFO), time ranges, applications, or any log content. Returns the actual log data with timestamps, messages, severity levels, and metadata.',
     inputSchema: {
       type: 'object',
       properties: {
         query: {
           type: 'string',
-          description: 'DataPrime query string (e.g., "source logs | limit 100", "source metrics | filter metric_name == \'cpu_usage\'")'
-        },
-        tier: {
-          type: 'string',
-          enum: ['TIER_FREQUENT_SEARCH', 'TIER_ARCHIVE'],
-          description: 'Data tier to query. TIER_FREQUENT_SEARCH for recent data, TIER_ARCHIVE for archived data',
-          default: 'TIER_FREQUENT_SEARCH'
-        },
-        limit: {
-          type: 'number',
-          description: 'Maximum number of results to return (default: 2000, max: 12000 for frequent search, 50000 for archive)',
-          minimum: 1,
-          maximum: 50000
+          description: 'DataPrime query string. EXAMPLES for common requests:\n- Last 5 error logs: "source logs | filter severity == \\"ERROR\\" | limit 5"\n- Recent critical logs: "source logs | filter severity == \\"CRITICAL\\" | limit 10"\n- Application errors: "source logs | filter severity == \\"ERROR\\" AND applicationname == \\"myapp\\" | limit 20"\n- Search for specific error: "source logs | filter text contains \\"timeout\\" | limit 10"\n- Logs from last hour: "source logs | filter timestamp > now() - 1h | limit 50"'
         },
         startDate: {
           type: 'string',
-          description: 'Start date and time for the query in ISO 8601 format (e.g., "2023-05-29T11:20:00.00Z")'
+          description: 'Start time in ISO format (e.g., "2025-06-19T21:00:00.000Z"). Defaults to 24 hours ago if not specified. For "recent" or "latest" logs, leave empty.'
         },
         endDate: {
           type: 'string',
-          description: 'End date and time for the query in ISO 8601 format (e.g., "2023-05-29T11:30:00.00Z")'
+          description: 'End time in ISO format (e.g., "2025-06-19T22:00:00.000Z"). Defaults to current time if not specified. For "recent" or "latest" logs, leave empty.'
         },
-        defaultSource: {
+        tier: {
           type: 'string',
-          description: 'Default source when omitted in query (e.g., "logs", "metrics", "spans")'
+          enum: ['TIER_ARCHIVE', 'TIER_FREQUENT_SEARCH'],
+          description: 'Data tier to search. Use TIER_FREQUENT_SEARCH for recent data (faster, more expensive) or TIER_ARCHIVE for older data (slower, cheaper). Default: TIER_FREQUENT_SEARCH for recent logs.'
+        },
+        limit: {
+          type: 'number',
+          description: 'Maximum number of log entries to return (1-10000). Defaults to 100. Use smaller limits (5-20) for "last N logs" requests.'
         }
       },
       required: ['query']
@@ -49,33 +42,30 @@ export const queryTools: Tool[] = [
   },
   {
     name: 'query_lucene',
-    description: 'Execute Lucene queries on indexed logs. Supports free-text search, field search, range queries, regex, and boolean operators.',
+    description: 'Execute Lucene queries to search ACTUAL LOG DATA with traditional search syntax. Use this tool when users ask for logs using simple search terms. This returns actual log entries, not configuration. Best for: simple text searches in logs, field-based filtering, boolean queries when you need familiar Lucene syntax. Returns actual log data with timestamps, messages, and metadata.',
     inputSchema: {
       type: 'object',
       properties: {
         query: {
           type: 'string',
-          description: 'Lucene query string (e.g., "ERROR", "msg:failed", "status_code.numeric:[400 TO 499]", "level:ERROR AND NOT env:staging")'
-        },
-        tier: {
-          type: 'string',
-          enum: ['TIER_FREQUENT_SEARCH', 'TIER_ARCHIVE'],
-          description: 'Data tier to query. TIER_FREQUENT_SEARCH for recent data, TIER_ARCHIVE for archived data',
-          default: 'TIER_FREQUENT_SEARCH'
-        },
-        limit: {
-          type: 'number',
-          description: 'Maximum number of results to return (default: 2000, max: 12000 for frequent search, 50000 for archive)',
-          minimum: 1,
-          maximum: 50000
+          description: 'Lucene query string. EXAMPLES for common requests:\n- Error logs: "severity:ERROR"\n- Specific application errors: "severity:ERROR AND applicationName:myapp"\n- Search for text: "message:timeout AND severity:ERROR"\n- 500 errors: "status:500"\n- Recent failures: "failed OR error OR exception"'
         },
         startDate: {
           type: 'string',
-          description: 'Start date and time for the query in ISO 8601 format (e.g., "2023-05-29T11:20:00.00Z")'
+          description: 'Start time in ISO format. Defaults to 24 hours ago if not specified. For "recent" logs, leave empty.'
         },
         endDate: {
           type: 'string',
-          description: 'End date and time for the query in ISO 8601 format (e.g., "2023-05-29T11:30:00.00Z")'
+          description: 'End time in ISO format. Defaults to current time if not specified. For "recent" logs, leave empty.'
+        },
+        tier: {
+          type: 'string',
+          enum: ['TIER_ARCHIVE', 'TIER_FREQUENT_SEARCH'],
+          description: 'Data tier to search. TIER_FREQUENT_SEARCH for recent data, TIER_ARCHIVE for older data. Default: TIER_FREQUENT_SEARCH.'
+        },
+        limit: {
+          type: 'number',
+          description: 'Maximum number of log entries to return (1-10000). Use 5-20 for "last N logs" requests.'
         }
       },
       required: ['query']
@@ -83,45 +73,40 @@ export const queryTools: Tool[] = [
   },
   {
     name: 'submit_background_query',
-    description: 'Submit a long-running background query for extensive analytical tasks like monthly reports. Use for queries that may take longer than 30 seconds.',
+    description: 'Submit long-running queries for large log datasets that may take several minutes to complete. Use this for: large log exports, complex aggregations over long time periods, queries that might timeout in regular query, and when you need to process massive datasets. Returns a query ID to check status and retrieve results later. NOT for simple "show me last 5 logs" requests.',
     inputSchema: {
       type: 'object',
       properties: {
         query: {
           type: 'string',
-          description: 'DataPrime or Lucene query string for background execution'
+          description: 'DataPrime query string for background execution. Should be complex queries that need more time to process large datasets.'
+        },
+        startDate: {
+          type: 'string',
+          description: 'Start time in ISO format. Required for background queries to define the time range.'
+        },
+        endDate: {
+          type: 'string',
+          description: 'End time in ISO format. Required for background queries to define the time range.'
         },
         syntax: {
           type: 'string',
           enum: ['QUERY_SYNTAX_DATAPRIME', 'QUERY_SYNTAX_LUCENE'],
-          description: 'Query syntax type',
-          default: 'QUERY_SYNTAX_DATAPRIME'
-        },
-        startDate: {
-          type: 'string',
-          description: 'Start date and time for the query in ISO 8601 format'
-        },
-        endDate: {
-          type: 'string',
-          description: 'End date and time for the query in ISO 8601 format'
-        },
-        nowDate: {
-          type: 'string',
-          description: 'Contextual now for the query in ISO 8601 format (default: current time)'
+          description: 'Query syntax type. Use QUERY_SYNTAX_DATAPRIME for DataPrime queries or QUERY_SYNTAX_LUCENE for Lucene queries.'
         }
       },
-      required: ['query', 'syntax']
+      required: ['query', 'startDate', 'endDate']
     }
   },
   {
     name: 'get_background_query_status',
-    description: 'Check the status of a background query to see if it\'s running, completed, or failed.',
+    description: 'Check the execution status of a previously submitted background query. Use this to: monitor query progress, check if query completed successfully, get error information if query failed, and determine when results are ready for retrieval. Only use after submit_background_query.',
     inputSchema: {
       type: 'object',
       properties: {
         queryId: {
           type: 'string',
-          description: 'The query ID returned from submit_background_query'
+          description: 'The query ID returned from submit_background_query. Used to track the specific background query.'
         }
       },
       required: ['queryId']
@@ -129,13 +114,13 @@ export const queryTools: Tool[] = [
   },
   {
     name: 'get_background_query_data',
-    description: 'Retrieve the results from a completed background query.',
+    description: 'Retrieve the actual log data results from a completed background query. Use this after confirming the query status is completed. Returns the actual log entries from the background query execution.',
     inputSchema: {
       type: 'object',
       properties: {
         queryId: {
           type: 'string',
-          description: 'The query ID of the completed background query'
+          description: 'The query ID of the completed background query whose results you want to retrieve.'
         }
       },
       required: ['queryId']
@@ -143,13 +128,13 @@ export const queryTools: Tool[] = [
   },
   {
     name: 'cancel_background_query',
-    description: 'Cancel a running background query.',
+    description: 'Cancel a running background query to stop execution and free up resources. Use this when: query is taking too long, you made an error in the query, or you no longer need the results.',
     inputSchema: {
       type: 'object',
       properties: {
         queryId: {
           type: 'string',
-          description: 'The query ID of the background query to cancel'
+          description: 'The query ID of the background query to cancel.'
         }
       },
       required: ['queryId']
@@ -345,9 +330,22 @@ async function handleCancelBackgroundQuery(client: any, args: any): Promise<stri
   }
 }
 
-function formatQueryResponse(responses: any[], queryType: string): string {
+function formatQueryResponse(responses: any, queryType: string): string {
   let result = `${queryType} Query Results\n`;
   result += `=`.repeat(queryType.length + 14) + '\n\n';
+
+  // Handle different response structures
+  if (!Array.isArray(responses)) {
+    // If responses is not an array, try to handle it as a single response
+    if ((responses as any).result) {
+      result += formatQueryResults((responses as any).result, queryType);
+    } else if ((responses as any).results) {
+      result += formatQueryResults(responses as any, queryType);
+    } else {
+      result += `Unexpected response structure: ${JSON.stringify(responses)}\n`;
+    }
+    return result;
+  }
 
   for (const response of responses) {
     if (response.queryId) {
