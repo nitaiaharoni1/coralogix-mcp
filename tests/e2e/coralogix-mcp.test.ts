@@ -27,7 +27,7 @@ describe('Coralogix MCP Server E2E Tests', () => {
   describe('Server Initialization', () => {
     it('should start successfully and list all tools', async () => {
       if (!process.env.CORALOGIX_API_KEY || !process.env.CORALOGIX_DOMAIN) {
-        pending('Coralogix credentials not available');
+        console.log('Skipping test - Coralogix credentials not available'); return;
         return;
       }
 
@@ -44,7 +44,7 @@ describe('Coralogix MCP Server E2E Tests', () => {
 
     it('should have proper tool schemas', async () => {
       if (!process.env.CORALOGIX_API_KEY || !process.env.CORALOGIX_DOMAIN) {
-        pending('Coralogix credentials not available');
+        console.log('Skipping test - Coralogix credentials not available'); return;
         return;
       }
 
@@ -63,7 +63,7 @@ describe('Coralogix MCP Server E2E Tests', () => {
   describe('Query Tools', () => {
     it('should handle DataPrime query tool call', async () => {
       if (!process.env.CORALOGIX_API_KEY || !process.env.CORALOGIX_DOMAIN) {
-        pending('Coralogix credentials not available');
+        console.log('Skipping test - Coralogix credentials not available'); return;
         return;
       }
 
@@ -79,7 +79,7 @@ describe('Coralogix MCP Server E2E Tests', () => {
 
     it('should handle Lucene query tool call', async () => {
       if (!process.env.CORALOGIX_API_KEY || !process.env.CORALOGIX_DOMAIN) {
-        pending('Coralogix credentials not available');
+        console.log('Skipping test - Coralogix credentials not available'); return;
         return;
       }
 
@@ -98,7 +98,7 @@ describe('Coralogix MCP Server E2E Tests', () => {
   describe('Error Handling', () => {
     it('should handle invalid tool names', async () => {
       if (!process.env.CORALOGIX_API_KEY || !process.env.CORALOGIX_DOMAIN) {
-        pending('Coralogix credentials not available');
+        console.log('Skipping test - Coralogix credentials not available'); return;
         return;
       }
 
@@ -108,7 +108,7 @@ describe('Coralogix MCP Server E2E Tests', () => {
 
     it('should handle missing required parameters', async () => {
       if (!process.env.CORALOGIX_API_KEY || !process.env.CORALOGIX_DOMAIN) {
-        pending('Coralogix credentials not available');
+        console.log('Skipping test - Coralogix credentials not available'); return;
         return;
       }
 

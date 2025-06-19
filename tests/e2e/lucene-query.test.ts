@@ -27,7 +27,7 @@ describe('Lucene Query Tool E2E Tests', () => {
   describe('Basic Lucene Queries', () => {
     it('should execute wildcard query', async () => {
       if (!process.env.CORALOGIX_API_KEY || !process.env.CORALOGIX_DOMAIN) {
-        pending('Coralogix credentials not available');
+        console.log('Skipping test - Coralogix credentials not available');
         return;
       }
 
@@ -46,7 +46,7 @@ describe('Lucene Query Tool E2E Tests', () => {
 
     it('should execute free text search', async () => {
       if (!process.env.CORALOGIX_API_KEY || !process.env.CORALOGIX_DOMAIN) {
-        pending('Coralogix credentials not available');
+        console.log('Skipping test - Coralogix credentials not available'); return;
         return;
       }
 
@@ -63,7 +63,7 @@ describe('Lucene Query Tool E2E Tests', () => {
 
     it('should execute query with larger limit', async () => {
       if (!process.env.CORALOGIX_API_KEY || !process.env.CORALOGIX_DOMAIN) {
-        pending('Coralogix credentials not available');
+        console.log('Skipping test - Coralogix credentials not available'); return;
         return;
       }
 
@@ -82,7 +82,7 @@ describe('Lucene Query Tool E2E Tests', () => {
   describe('Lucene Field Queries', () => {
     it('should handle field search queries', async () => {
       if (!process.env.CORALOGIX_API_KEY || !process.env.CORALOGIX_DOMAIN) {
-        pending('Coralogix credentials not available');
+        console.log('Skipping test - Coralogix credentials not available'); return;
         return;
       }
 
@@ -99,7 +99,7 @@ describe('Lucene Query Tool E2E Tests', () => {
 
     it('should handle non-existent field queries', async () => {
       if (!process.env.CORALOGIX_API_KEY || !process.env.CORALOGIX_DOMAIN) {
-        pending('Coralogix credentials not available');
+        console.log('Skipping test - Coralogix credentials not available'); return;
         return;
       }
 
@@ -115,7 +115,7 @@ describe('Lucene Query Tool E2E Tests', () => {
 
     it('should handle keyword field queries', async () => {
       if (!process.env.CORALOGIX_API_KEY || !process.env.CORALOGIX_DOMAIN) {
-        pending('Coralogix credentials not available');
+        console.log('Skipping test - Coralogix credentials not available'); return;
         return;
       }
 
@@ -133,7 +133,7 @@ describe('Lucene Query Tool E2E Tests', () => {
   describe('Lucene Boolean Queries', () => {
     it('should handle AND queries', async () => {
       if (!process.env.CORALOGIX_API_KEY || !process.env.CORALOGIX_DOMAIN) {
-        pending('Coralogix credentials not available');
+        console.log('Skipping test - Coralogix credentials not available'); return;
         return;
       }
 
@@ -149,7 +149,7 @@ describe('Lucene Query Tool E2E Tests', () => {
 
     it('should handle OR queries', async () => {
       if (!process.env.CORALOGIX_API_KEY || !process.env.CORALOGIX_DOMAIN) {
-        pending('Coralogix credentials not available');
+        console.log('Skipping test - Coralogix credentials not available'); return;
         return;
       }
 
@@ -165,7 +165,7 @@ describe('Lucene Query Tool E2E Tests', () => {
 
     it('should handle NOT queries', async () => {
       if (!process.env.CORALOGIX_API_KEY || !process.env.CORALOGIX_DOMAIN) {
-        pending('Coralogix credentials not available');
+        console.log('Skipping test - Coralogix credentials not available'); return;
         return;
       }
 
@@ -181,7 +181,7 @@ describe('Lucene Query Tool E2E Tests', () => {
 
     it('should handle complex boolean queries', async () => {
       if (!process.env.CORALOGIX_API_KEY || !process.env.CORALOGIX_DOMAIN) {
-        pending('Coralogix credentials not available');
+        console.log('Skipping test - Coralogix credentials not available'); return;
         return;
       }
 
@@ -199,7 +199,7 @@ describe('Lucene Query Tool E2E Tests', () => {
   describe('Lucene Range Queries', () => {
     it('should handle numeric range queries', async () => {
       if (!process.env.CORALOGIX_API_KEY || !process.env.CORALOGIX_DOMAIN) {
-        pending('Coralogix credentials not available');
+        console.log('Skipping test - Coralogix credentials not available'); return;
         return;
       }
 
@@ -215,7 +215,7 @@ describe('Lucene Query Tool E2E Tests', () => {
 
     it('should handle date range queries', async () => {
       if (!process.env.CORALOGIX_API_KEY || !process.env.CORALOGIX_DOMAIN) {
-        pending('Coralogix credentials not available');
+        console.log('Skipping test - Coralogix credentials not available'); return;
         return;
       }
 
@@ -233,7 +233,7 @@ describe('Lucene Query Tool E2E Tests', () => {
   describe('Lucene Query Parameters', () => {
     it('should respect limit parameter', async () => {
       if (!process.env.CORALOGIX_API_KEY || !process.env.CORALOGIX_DOMAIN) {
-        pending('Coralogix credentials not available');
+        console.log('Skipping test - Coralogix credentials not available'); return;
         return;
       }
 
@@ -249,7 +249,7 @@ describe('Lucene Query Tool E2E Tests', () => {
 
     it('should work with different tiers', async () => {
       if (!process.env.CORALOGIX_API_KEY || !process.env.CORALOGIX_DOMAIN) {
-        pending('Coralogix credentials not available');
+        console.log('Skipping test - Coralogix credentials not available'); return;
         return;
       }
 
@@ -265,7 +265,7 @@ describe('Lucene Query Tool E2E Tests', () => {
 
     it('should handle time range parameters', async () => {
       if (!process.env.CORALOGIX_API_KEY || !process.env.CORALOGIX_DOMAIN) {
-        pending('Coralogix credentials not available');
+        console.log('Skipping test - Coralogix credentials not available'); return;
         return;
       }
 
@@ -289,7 +289,7 @@ describe('Lucene Query Tool E2E Tests', () => {
   describe('Lucene Error Handling', () => {
     it('should handle missing query parameter', async () => {
       if (!process.env.CORALOGIX_API_KEY || !process.env.CORALOGIX_DOMAIN) {
-        pending('Coralogix credentials not available');
+        console.log('Skipping test - Coralogix credentials not available'); return;
         return;
       }
 
@@ -303,7 +303,7 @@ describe('Lucene Query Tool E2E Tests', () => {
 
     it('should handle invalid query syntax', async () => {
       if (!process.env.CORALOGIX_API_KEY || !process.env.CORALOGIX_DOMAIN) {
-        pending('Coralogix credentials not available');
+        console.log('Skipping test - Coralogix credentials not available'); return;
         return;
       }
 
@@ -318,7 +318,7 @@ describe('Lucene Query Tool E2E Tests', () => {
 
     it('should handle excessive limit', async () => {
       if (!process.env.CORALOGIX_API_KEY || !process.env.CORALOGIX_DOMAIN) {
-        pending('Coralogix credentials not available');
+        console.log('Skipping test - Coralogix credentials not available'); return;
         return;
       }
 
@@ -336,7 +336,7 @@ describe('Lucene Query Tool E2E Tests', () => {
   describe('Lucene Response Format', () => {
     it('should return properly formatted response', async () => {
       if (!process.env.CORALOGIX_API_KEY || !process.env.CORALOGIX_DOMAIN) {
-        pending('Coralogix credentials not available');
+        console.log('Skipping test - Coralogix credentials not available'); return;
         return;
       }
 
@@ -356,7 +356,7 @@ describe('Lucene Query Tool E2E Tests', () => {
 
     it('should include query ID in response', async () => {
       if (!process.env.CORALOGIX_API_KEY || !process.env.CORALOGIX_DOMAIN) {
-        pending('Coralogix credentials not available');
+        console.log('Skipping test - Coralogix credentials not available'); return;
         return;
       }
 
@@ -374,7 +374,7 @@ describe('Lucene Query Tool E2E Tests', () => {
 
     it('should handle warnings properly', async () => {
       if (!process.env.CORALOGIX_API_KEY || !process.env.CORALOGIX_DOMAIN) {
-        pending('Coralogix credentials not available');
+        console.log('Skipping test - Coralogix credentials not available'); return;
         return;
       }
 
