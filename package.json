@@ -1,12 +1,12 @@
 {
-  "name": "travel-mcp",
-  "version": "1.0.1",
-  "description": "Model Context Protocol server for travel services using Amadeus API - flight search, hotel booking, airport information, and travel recommendations",
+  "name": "coralogix-mcp",
+  "version": "1.0.0",
+  "description": "Model Context Protocol server for Coralogix observability platform - query logs, metrics, traces, manage alerts, and access all Coralogix APIs",
   "type": "module",
   "main": "dist/server.js",
   "types": "dist/server.d.ts",
   "bin": {
-    "travel-mcp": "dist/server.js"
+    "coralogix-mcp": "dist/server.js"
   },
   "scripts": {
     "build": "tsc",
@@ -29,15 +29,17 @@
   "keywords": [
     "mcp",
     "model-context-protocol",
-    "travel",
-    "amadeus",
-    "flights",
-    "hotels",
-    "airports",
-    "booking",
+    "coralogix",
+    "observability",
+    "logs",
+    "metrics",
+    "traces",
+    "monitoring",
+    "alerts",
+    "dataprime",
+    "lucene",
     "claude",
     "ai",
-    "travel-api",
     "typescript"
   ],
   "author": "Nitai Aharoni <nitaiaharoni1@gmail.com>",
@@ -51,7 +53,7 @@
   "preferGlobal": true,
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.0",
-    "amadeus-ts": "^5.1.1",
+    "axios": "^1.9.0",
     "date-fns": "^3.6.0",
     "dotenv": "^16.5.0"
   },

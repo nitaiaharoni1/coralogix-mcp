@@ -1,25 +1,35 @@
 /**
- * MCP Tools registry and handlers
+ * MCP Tools registry and handlers for Coralogix
  */
 
 import { Tool } from '@modelcontextprotocol/sdk/types.js';
 import { CallToolRequest } from '@modelcontextprotocol/sdk/types.js';
-import { flightTools, handleFlightTool } from './flights.js';
-import { hotelTools, handleHotelTool } from './hotels.js';
-import { locationTools, handleLocationTool } from './locations.js';
-import { flightAdvancedTools, handleFlightAdvancedTool } from './flight-advanced.js';
-import { hotelAdvancedTools, handleHotelAdvancedTool } from './hotel-advanced.js';
-import { activitiesAnalyticsTools, handleActivitiesAnalyticsTool } from './activities-analytics.js';
+import { queryTools, handleQueryTool } from './query.js';
+import { billingTools, handleBillingTool } from './billing.js';
+import { alertTools, handleAlertTool } from './alerts.js';
+import { dashboardTools, handleDashboardTool } from './dashboards.js';
+import { incidentTools, handleIncidentTool } from './incidents.js';
+import { sloTools, handleSloTool } from './slos.js';
+import { dataUsageTools, handleDataUsageTools } from './data-usage.js';
+import { policiesTools, handlePoliciesTools } from './policies.js';
+
+import { targetsTools, handleTargetsTools } from './targets.js';
+import { teamPermissionsTools, handleTeamPermissionsTools } from './team-permissions.js';
 
 // Combine all tool definitions
 export function getToolDefinitions(): Tool[] {
   return [
-    ...flightTools,
-    ...hotelTools,
-    ...locationTools,
-    ...flightAdvancedTools,
-    ...hotelAdvancedTools,
-    ...activitiesAnalyticsTools,
+    ...queryTools,
+    ...billingTools,
+    ...alertTools,
+    ...dashboardTools,
+    ...incidentTools,
+    ...sloTools,
+    ...dataUsageTools,
+    ...policiesTools,
+
+    ...targetsTools,
+    ...teamPermissionsTools
   ];
 }
 
@@ -34,19 +44,35 @@ export async function handleToolCall(request: CallToolRequest): Promise<{
     let result: string;
 
     // Route to appropriate handler based on tool name
-    // Check specific advanced tools first to avoid conflicts with general patterns
-    if (name === 'get_flight_seat_maps' || name === 'predict_flight_delay' || name === 'create_flight_booking' || name === 'get_flight_booking' || name === 'get_flight_pricing') {
-      result = await handleFlightAdvancedTool(name, args || {});
-    } else if (name === 'get_hotel_sentiments' || name === 'search_hotel_autocomplete') {
-      result = await handleHotelAdvancedTool(name, args || {});
-    } else if (name === 'search_activities' || name === 'search_points_of_interest' || name === 'get_travel_analytics' || name === 'predict_trip_purpose') {
-      result = await handleActivitiesAnalyticsTool(name, args || {});
-    } else if (name.startsWith('search_flights') || name.startsWith('get_flight') || name.startsWith('get_cheapest')) {
-      result = await handleFlightTool(name, args || {});
-    } else if (name.startsWith('search_hotels') || name.startsWith('get_hotel')) {
-      result = await handleHotelTool(name, args || {});
-    } else if (name.startsWith('search_locations') || name.startsWith('get_airport') || name.startsWith('get_nearby') || name.startsWith('get_airline')) {
-      result = await handleLocationTool(name, args || {});
+    if (name.startsWith('query_') || name.includes('background_query')) {
+      result = await handleQueryTool(name, args || {});
+    } else if (name.startsWith('get_data_usage') || name.startsWith('get_current_quota')) {
+      const billingResult = await handleBillingTool(name, args || {});
+      if (billingResult === null) {
+        throw new Error(`Unknown billing tool: ${name}`);
+      }
+      result = billingResult;
+    } else if (name.includes('alert')) {
+      result = await handleAlertTool(name, args || {});
+    } else if (name.includes('dashboard')) {
+      result = await handleDashboardTool(name, args || {});
+    } else if (name.includes('incident')) {
+      result = await handleIncidentTool(name, args || {});
+    } else if (name.includes('slo')) {
+      result = await handleSloTool(name, args || {});
+    } else if (dataUsageTools.some(tool => tool.name === name)) {
+      const { getCoralogixClient } = await import('../services/coralogix-client.js');
+      result = await handleDataUsageTools(name, args || {}, getCoralogixClient());
+    } else if (policiesTools.some(tool => tool.name === name)) {
+      const { getCoralogixClient } = await import('../services/coralogix-client.js');
+      result = await handlePoliciesTools(name, args || {}, getCoralogixClient());
+
+    } else if (targetsTools.some(tool => tool.name === name)) {
+      const { getCoralogixClient } = await import('../services/coralogix-client.js');
+      result = await handleTargetsTools(name, args || {}, getCoralogixClient());
+    } else if (teamPermissionsTools.some(tool => tool.name === name)) {
+      const { getCoralogixClient } = await import('../services/coralogix-client.js');
+      result = await handleTeamPermissionsTools(name, args || {}, getCoralogixClient());
     } else {
       throw new Error(`Unknown tool: ${name}`);
     }
