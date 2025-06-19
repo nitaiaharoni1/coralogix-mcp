@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
 /**
- * Travel MCP Server
- * Main entry point for the MCP server with Amadeus API integration
+ * Coralogix MCP Server
+ * Main entry point for the MCP server with Coralogix Data Query API integration
  */
 
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
@@ -18,7 +18,7 @@ dotenv.config();
 
 // Server configuration
 const SERVER_CONFIG = {
-  name: 'travel-mcp',
+  name: 'coralogix-mcp',
   version: '1.0.0',
 };
 
@@ -52,25 +52,25 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 async function main(): Promise<void> {
   try {
     // Validate required environment variables
-    const requiredEnvVars = ['AMADEUS_CLIENT_ID', 'AMADEUS_CLIENT_SECRET'];
+    const requiredEnvVars = ['CORALOGIX_API_KEY', 'CORALOGIX_DOMAIN'];
     const missingVars = requiredEnvVars.filter(varName => !process.env[varName]);
     
     if (missingVars.length > 0) {
       console.error('ERROR: Missing required environment variables:', missingVars.join(', '));
-      console.error('       Please set up your Amadeus API credentials:');
-      console.error('       Option A: Create .env file with your credentials');
-      console.error('       Option B: Add credentials to Claude Desktop configuration');
-      console.error('       Get credentials from: https://developers.amadeus.com/');
+      console.error('       Please set up your Coralogix API credentials:');
+      console.error('       CORALOGIX_API_KEY: Your Coralogix API key');
+      console.error('       CORALOGIX_DOMAIN: Your Coralogix domain (e.g., coralogix.com, coralogix.us)');
+      console.error('       Get API key from: https://coralogix.com/docs/api-keys/');
       process.exit(1);
     }
 
     console.error('INFO: Environment variables validated');
-    console.error(`INFO: Using Amadeus ${process.env.AMADEUS_ENVIRONMENT || 'test'} environment`);
+    console.error(`INFO: Using Coralogix domain: ${process.env.CORALOGIX_DOMAIN}`);
 
     const transport = new StdioServerTransport();
     await server.connect(transport);
-    console.error('INFO: Travel MCP Server started successfully');
-    console.error('INFO: Available tools: flights, hotels, locations, airports, airlines, advanced features, activities, analytics');
+    console.error('INFO: Coralogix MCP Server started successfully');
+    console.error('INFO: Available tools: DataPrime queries, Lucene queries, background queries');
   } catch (error) {
     console.error('ERROR: Server startup failed:', (error as Error).message);
     process.exit(1);
@@ -89,53 +89,33 @@ if (isMainModule) {
   // Handle help command
   if (args.includes('--help') || args.includes('-h')) {
     console.log(`
-Travel MCP Server v${SERVER_CONFIG.version}
+Coralogix MCP Server v${SERVER_CONFIG.version}
 
-A Model Context Protocol server for travel services using Amadeus API.
+A Model Context Protocol server for Coralogix Data Query APIs.
 
 SETUP:
-  1. Get Amadeus API credentials from https://developers.amadeus.com/
-  2. Option A: Copy .env.example to .env and fill in your credentials
-     Option B: Add credentials directly to Claude Desktop configuration
+  1. Get Coralogix API key from your Coralogix account
+  2. Set environment variables:
+     CORALOGIX_API_KEY=your_api_key
+     CORALOGIX_DOMAIN=your_domain (e.g., coralogix.com, coralogix.us)
   3. Install dependencies: npm install
   4. Build the server: npm run build
   5. Configure in Claude Desktop or your MCP client
 
 AVAILABLE TOOLS:
-  - search_flights         - Search for flight offers
-  - get_flight_inspiration - Get cheapest destinations from origin
-  - get_cheapest_dates     - Find cheapest dates to fly
-  - search_hotels          - Search for hotels by location
-  - search_hotel_offers    - Get hotel offers with pricing
-  - search_locations       - Search airports, cities, locations
-  - get_airport_info       - Get detailed airport information
-  - get_nearby_airports    - Find airports near coordinates
-  - get_airline_info       - Get airline information
-  
-  Advanced Flight Features:
-  - get_flight_seat_maps   - Get seat maps for flight orders
-  - predict_flight_delay   - Predict flight delay probability
-  - create_flight_booking  - Create flight booking with traveler information
-  - get_flight_booking     - Retrieve flight booking details by ID
-  - get_flight_pricing     - Get detailed pricing with booking links
-  
-  Advanced Hotel Features:
-  - get_hotel_sentiments   - Get hotel ratings and sentiment analysis
-  - search_hotel_autocomplete - Hotel name autocomplete search
-  
-  Activities & Points of Interest:
-  - search_activities      - Search for activities and tours
-  - search_points_of_interest - Search for points of interest
-  
-  Travel Analytics:
-  - get_travel_analytics   - Get air traffic analytics between cities
-  - predict_trip_purpose   - Predict trip purpose (business/leisure)
+  Data Query APIs:
+  - query_dataprime        - Run DataPrime queries on logs, metrics, and traces
+  - query_lucene          - Run Lucene queries on indexed logs
+  - submit_background_query - Submit long-running background queries
+  - get_background_query_status - Check status of background queries
+  - get_background_query_data - Retrieve results from background queries
+  - cancel_background_query - Cancel running background queries
 
 USAGE:
-  travel-mcp              - Start the MCP server
-  travel-mcp --help       - Show this help message
+  coralogix-mcp           - Start the MCP server
+  coralogix-mcp --help    - Show this help message
 
-For more information, visit: https://github.com/nitaiaharoni1/travel-mcp
+For more information, visit: https://coralogix.com/docs/direct-query-http-api/
 `);
     process.exit(0);
   }

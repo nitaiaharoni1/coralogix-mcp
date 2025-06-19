@@ -59,6 +59,9 @@ export class MCPServerTestHelper extends EventEmitter {
         env: { 
           ...process.env,
           TEST_INSTANCE_ID: this.instanceId,
+          // Add required Coralogix environment variables for testing
+          CORALOGIX_API_KEY: process.env.CORALOGIX_API_KEY || 'test-api-key',
+          CORALOGIX_DOMAIN: process.env.CORALOGIX_DOMAIN || 'coralogix.com',
           // Add some randomization to avoid conflicts
           PORT: String(3000 + Math.floor(Math.random() * 1000))
         }
@@ -87,7 +90,7 @@ export class MCPServerTestHelper extends EventEmitter {
       // Handle server errors
       this.server.stderr.on('data', (data) => {
         const errorMsg = data.toString();
-        if (errorMsg.includes('INFO: Travel MCP Server started successfully')) {
+        if (errorMsg.includes('INFO: Coralogix MCP Server started successfully')) {
           clearTimeout(timeout);
           this.isStarted = true;
           resolve();

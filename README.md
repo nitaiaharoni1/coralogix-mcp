@@ -1,262 +1,344 @@
-# Travel MCP Server
+# Coralogix MCP Server
 
-A comprehensive Model Context Protocol (MCP) server for travel services using the Amadeus API. This server provides AI assistants with powerful travel capabilities including flight search, hotel booking, airport information, and travel recommendations.
+A Model Context Protocol (MCP) server for integrating with Coralogix APIs. This server provides comprehensive tools for querying logs, managing alerts, dashboards, incidents, SLOs, and monitoring data usage.
 
 ## Features
 
-### ✈️ Flight Services
-- **Flight Search**: Find flights between any two destinations
-- **Flight Inspiration**: Discover cheapest destinations from your origin
-- **Cheapest Dates**: Find the most affordable travel dates
-- **Multi-class Support**: Economy, Premium Economy, Business, and First class
-- **Flexible Options**: One-way, round-trip, non-stop preferences
+### 🔍 Query & Search Tools
+- **DataPrime Queries**: Execute DataPrime queries on logs, metrics, and traces
+- **Lucene Queries**: Perform Lucene-based searches on indexed logs  
+- **Background Queries**: Submit long-running queries for extensive analytical tasks
+- **Query Management**: Check status, retrieve results, and cancel background queries
 
-### 🏨 Hotel Services
-- **Hotel Search**: Find hotels by city or geographic coordinates
-- **Hotel Offers**: Get detailed pricing and availability
-- **Advanced Filtering**: Filter by amenities, ratings, hotel chains
-- **Room Details**: Comprehensive room and pricing information
+### 🚨 Alert Management
+- **Alert Definitions**: Create, update, delete, and manage alert definitions
+- **Alert Types**: Support for logs immediate, threshold, anomaly, metric, and flow alerts
+- **Alert Control**: Enable/disable alerts and configure priorities
+- **Alert Monitoring**: List and track all alert definitions with their status
 
-### 🌍 Location Services
-- **Location Search**: Find airports, cities, and points of interest
-- **Airport Information**: Detailed airport data and facilities
-- **Nearby Airports**: Find airports within a specified radius
-- **Airline Information**: Get details about airline carriers
+### 📊 Dashboard Management
+- **Dashboard Operations**: Create, read, update, and delete dashboards
+- **Dashboard Catalog**: Browse and organize dashboards by folders
+- **Dashboard Configuration**: Set time frames, add descriptions, and manage locks
+- **Dashboard Visualization**: Support for widgets, variables, and filters
 
-## Quick Start
+### 🔥 Incident Management
+- **Incident Tracking**: List and filter incidents by status, severity, and time
+- **Incident Actions**: Acknowledge, resolve, and close incidents
+- **Incident Details**: Get comprehensive incident information and history
+- **Incident Filtering**: Filter by application, subsystem, and custom criteria
 
-### 1. Get Amadeus API Credentials
+### 🎯 Service Level Objectives (SLOs)
+- **SLO Management**: Create, update, and delete SLOs
+- **SLO Monitoring**: Track service reliability and performance targets
+- **SLO Configuration**: Set target thresholds and time frames
+- **SLO Reporting**: Monitor SLO compliance and performance
 
-1. Visit [Amadeus for Developers](https://developers.amadeus.com/)
-2. Create a free account
-3. Create a new application to get your API credentials
-4. Note your Client ID and Client Secret
+### 💰 Data Usage & Billing
+- **Usage Analytics**: Get detailed data usage information
+- **Quota Monitoring**: Track quota consumption and limits
+- **Cost Optimization**: Monitor data processing and storage costs
 
-### 2. Installation
+## Installation
 
+1. Clone the repository:
 ```bash
-# Clone or download the project
-cd travel-mcp
+git clone <repository-url>
+cd coralogix-mcp
+```
 
-# Install dependencies
+2. Install dependencies:
+```bash
 npm install
-
-# Copy environment template
-cp .env.example .env
-
-# Edit .env with your Amadeus credentials
-# AMADEUS_CLIENT_ID=your_client_id_here
-# AMADEUS_CLIENT_SECRET=your_client_secret_here
 ```
 
-### 3. Build and Test
-
+3. Set up environment variables:
 ```bash
-# Build the project
+cp env.example .env
+```
+
+Edit `.env` with your Coralogix credentials:
+```
+CORALOGIX_API_KEY=your_api_key_here
+CORALOGIX_DOMAIN=your_domain_here
+```
+
+4. Build the project:
+```bash
 npm run build
-
-# Test the server
-npm start -- --help
 ```
 
-### 4. Configure with Claude Desktop
-
-Add to your Claude Desktop configuration file:
-
-**macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
-**Windows**: `%APPDATA%/Claude/claude_desktop_config.json`
-
-```json
-{
-  "mcpServers": {
-    "travel": {
-      "command": "node",
-      "args": ["/absolute/path/to/travel-mcp/dist/server.js"],
-      "env": {
-        "AMADEUS_CLIENT_ID": "your_client_id",
-        "AMADEUS_CLIENT_SECRET": "your_client_secret",
-        "AMADEUS_ENVIRONMENT": "test"
-      }
-    }
-  }
-}
+5. Start the server:
+```bash
+npm start
 ```
-
-## Available Tools
-
-### Flight Tools
-
-#### `search_flights`
-Search for flight offers between two locations.
-
-**Parameters:**
-- `originLocationCode` (required): IATA airport code for departure
-- `destinationLocationCode` (required): IATA airport code for arrival  
-- `departureDate` (required): Departure date in YYYY-MM-DD format
-- `returnDate` (optional): Return date for round-trip flights
-- `adults` (default: 1): Number of adult passengers
-- `children` (default: 0): Number of child passengers
-- `travelClass` (optional): ECONOMY, PREMIUM_ECONOMY, BUSINESS, FIRST
-- `nonStop` (optional): Search for non-stop flights only
-- `maxPrice` (optional): Maximum price filter
-- `currencyCode` (optional): Currency for pricing
-
-#### `get_flight_inspiration`
-Get flight inspiration - cheapest destinations from an origin.
-
-**Parameters:**
-- `origin` (required): IATA airport code for departure
-- `maxPrice` (optional): Maximum price filter
-
-#### `get_cheapest_dates`
-Find the cheapest dates to fly between two destinations.
-
-**Parameters:**
-- `origin` (required): IATA airport code for departure
-- `destination` (required): IATA airport code for arrival
-- `departureDate` (optional): Preferred departure date
-- `oneWay` (optional): Search for one-way flights only
-
-### Hotel Tools
-
-#### `search_hotels`
-Search for hotels by city or location.
-
-**Parameters:**
-- `cityCode` (required if no coordinates): IATA city code
-- `latitude` (required if no city): Latitude for location search
-- `longitude` (required if no city): Longitude for location search
-- `radius` (default: 5): Search radius in kilometers
-- `chainCodes` (optional): Hotel chain codes to filter by
-- `amenities` (optional): Required amenities
-- `ratings` (optional): Hotel star ratings to filter by
-
-#### `search_hotel_offers`
-Search for hotel offers with pricing and availability.
-
-**Parameters:**
-- `hotelIds` (required): Array of hotel IDs to search
-- `adults` (required): Number of adult guests
-- `checkInDate` (required): Check-in date in YYYY-MM-DD format
-- `checkOutDate` (required): Check-out date in YYYY-MM-DD format
-- `children` (optional): Number of children
-- `roomQuantity` (default: 1): Number of rooms
-- `currency` (optional): Currency code for pricing
-
-### Location Tools
-
-#### `search_locations`
-Search for airports, cities, and other travel locations.
-
-**Parameters:**
-- `keyword` (required): Search keyword (city name, airport name, or IATA code)
-- `subType` (optional): Types of locations (AIRPORT, CITY, POINT_OF_INTEREST, DISTRICT)
-
-#### `get_airport_info`
-Get detailed information about a specific airport.
-
-**Parameters:**
-- `iataCode` (required): IATA airport code
-
-#### `get_nearby_airports`
-Find airports near a specific location.
-
-**Parameters:**
-- `latitude` (required): Latitude of the location
-- `longitude` (required): Longitude of the location
-- `radius` (default: 500): Search radius in kilometers
-
-#### `get_airline_info`
-Get information about airlines.
-
-**Parameters:**
-- `airlineCodes` (required): Array of IATA airline codes
 
 ## Environment Variables
 
-| Variable | Required | Default | Description |
-|----------|----------|---------|-------------|
-| `AMADEUS_CLIENT_ID` | Yes | - | Your Amadeus API client ID |
-| `AMADEUS_CLIENT_SECRET` | Yes | - | Your Amadeus API client secret |
-| `AMADEUS_ENVIRONMENT` | No | `test` | API environment (`test` or `production`) |
-| `DEFAULT_CURRENCY` | No | `USD` | Default currency for pricing |
-| `DEFAULT_LOCALE` | No | `en-US` | Default locale for responses |
+- `CORALOGIX_API_KEY`: Your Coralogix API key
+- `CORALOGIX_DOMAIN`: Your Coralogix domain (e.g., `coralogix.com`, `coralogix.us`, `eu2.coralogix.com`)
 
-## Example Usage
+## Supported Domains
 
-Once configured with Claude Desktop, you can ask questions like:
+- `coralogix.com` (US)
+- `coralogix.us` (US2)  
+- `cx498.coralogix.com` (EU)
+- `eu2.coralogix.com` (EU2)
+- `coralogix.in` (India)
+- `coralogixsg.com` (Singapore)
+- `ap3.coralogix.com` (Asia Pacific)
 
-- "Find flights from New York to London departing tomorrow"
-- "What are the cheapest destinations I can fly to from LAX?"
-- "Search for hotels in Paris for 2 adults, checking in December 15th"
-- "What airports are near coordinates 40.7128, -74.0060?"
-- "Get information about JFK airport"
-- "Find the cheapest dates to fly from SFO to NRT"
+## Available Tools
+
+### Query Tools
+
+#### `query_dataprime`
+Execute DataPrime queries for logs, metrics, and traces.
+
+**Parameters:**
+- `query` (required): DataPrime query string
+- `tier`: Data tier (`TIER_FREQUENT_SEARCH` or `TIER_ARCHIVE`)
+- `limit`: Maximum results (default: 2000)
+- `startDate`: Start date (ISO 8601)
+- `endDate`: End date (ISO 8601)
+
+**Example:**
+```
+query_dataprime({
+  "query": "source logs | filter severity == 'ERROR' | limit 100",
+  "tier": "TIER_FREQUENT_SEARCH",
+  "startDate": "2023-05-29T11:20:00.00Z",
+  "endDate": "2023-05-29T11:30:00.00Z"
+})
+```
+
+#### `query_lucene`
+Execute Lucene queries on indexed logs.
+
+**Parameters:**
+- `query` (required): Lucene query string  
+- `tier`: Data tier
+- `limit`: Maximum results
+- `startDate`: Start date
+- `endDate`: End date
+
+**Example:**
+```
+query_lucene({
+  "query": "level:ERROR AND NOT env:staging",
+  "limit": 50
+})
+```
+
+#### `submit_background_query`
+Submit long-running background queries.
+
+**Parameters:**
+- `query` (required): Query string
+- `syntax` (required): Query syntax (`QUERY_SYNTAX_DATAPRIME` or `QUERY_SYNTAX_LUCENE`)
+- `startDate`: Start date
+- `endDate`: End date
+
+### Alert Management Tools
+
+#### `list_alerts`
+List all alert definitions.
+
+#### `create_alert`
+Create a new alert definition.
+
+**Parameters:**
+- `name` (required): Alert name
+- `priority` (required): Priority level (P1-P5)
+- `type` (required): Alert type
+- `description`: Alert description
+- `enabled`: Enable immediately (default: true)
+
+**Example:**
+```
+create_alert({
+  "name": "High Error Rate Alert",
+  "priority": "ALERT_DEF_PRIORITY_P2",
+  "type": "ALERT_DEF_TYPE_LOGS_THRESHOLD",
+  "description": "Alert when error rate exceeds threshold"
+})
+```
+
+#### `get_alert`
+Get alert details by ID.
+
+#### `update_alert`
+Update an existing alert.
+
+#### `delete_alert`
+Delete an alert definition.
+
+#### `enable_alert`
+Enable or disable an alert.
+
+### Dashboard Management Tools
+
+#### `list_dashboards`
+List all dashboards with folder organization.
+
+#### `create_dashboard`
+Create a new dashboard.
+
+**Parameters:**
+- `name` (required): Dashboard name
+- `description`: Dashboard description
+- `relativeTimeFrame`: Default time frame (default: "24h")
+- `isLocked`: Lock dashboard (default: false)
+
+**Example:**
+```
+create_dashboard({
+  "name": "Application Performance",
+  "description": "Monitor key application metrics",
+  "relativeTimeFrame": "1h"
+})
+```
+
+#### `get_dashboard`
+Get dashboard details by ID.
+
+#### `update_dashboard`
+Update dashboard properties.
+
+#### `delete_dashboard`
+Delete a dashboard.
+
+### Incident Management Tools
+
+#### `list_incidents`
+List incidents with filtering options.
+
+**Parameters:**
+- `status`: Filter by status (array)
+- `severity`: Filter by severity (array)
+- `state`: Filter by state (array)
+- `applicationName`: Filter by applications (array)
+- `startTime`: Start time filter
+- `endTime`: End time filter
+- `pageSize`: Results per page (default: 50)
+
+**Example:**
+```
+list_incidents({
+  "status": ["INCIDENT_STATUS_TRIGGERED"],
+  "severity": ["INCIDENT_SEVERITY_CRITICAL"],
+  "pageSize": 25
+})
+```
+
+#### `get_incident`
+Get detailed incident information.
+
+#### `acknowledge_incidents`
+Acknowledge incidents.
+
+**Parameters:**
+- `incidentIds` (required): Array of incident IDs
+
+#### `resolve_incidents`
+Mark incidents as resolved.
+
+#### `close_incidents`
+Close incidents.
+
+### SLO Management Tools
+
+#### `list_slos`
+List all Service Level Objectives.
+
+#### `create_slo`
+Create a new SLO.
+
+**Parameters:**
+- `name` (required): SLO name
+- `targetThresholdPercentage` (required): Target percentage
+- `sloTimeFrame`: Time frame (7/14/21/28 days)
+- `description`: SLO description
+- `creator`: Creator name/email
+
+**Example:**
+```
+create_slo({
+  "name": "API Response Time SLO",
+  "targetThresholdPercentage": 99.9,
+  "sloTimeFrame": "SLO_TIME_FRAME_28_DAYS",
+  "description": "99.9% of API requests should respond within 200ms"
+})
+```
+
+#### `get_slo`
+Get SLO details by ID.
+
+#### `update_slo`
+Update SLO configuration.
+
+#### `delete_slo`
+Delete an SLO.
+
+### Data Usage Tools
+
+#### `get_data_usage`
+Get detailed data usage information.
+
+#### `get_current_quota`
+Get current quota and usage information.
 
 ## Development
 
-### Project Structure
+### Testing
 
-```
-travel-mcp/
-├── src/
-│   ├── config/          # Configuration constants
-│   ├── services/        # Amadeus API service classes
-│   ├── tools/           # MCP tool definitions and handlers
-│   ├── types/           # TypeScript type definitions
-│   └── utils/           # Utility functions
-├── server.ts            # Main server entry point
-├── package.json         # Project configuration
-└── tsconfig.json        # TypeScript configuration
-```
-
-### Available Scripts
-
+Run the test suite:
 ```bash
-npm run build          # Build the TypeScript project
-npm run dev            # Run in development mode with ts-node
-npm run dev:watch      # Run in watch mode for development
-npm start              # Start the built server
-npm test               # Run tests
-npm run clean          # Clean build artifacts
+npm test
 ```
 
-### API Rate Limits
-
-The Amadeus Test API has the following rate limits:
-- 10 transactions per second
-- 1000 transactions per month (free tier)
-
-For production use, consider upgrading to a paid Amadeus plan.
-
-## Troubleshooting
-
-### Common Issues
-
-1. **"Missing required environment variables"**
-   - Ensure `AMADEUS_CLIENT_ID` and `AMADEUS_CLIENT_SECRET` are set
-   - Check that your `.env` file is in the project root
-
-2. **"Amadeus API Error: Invalid credentials"**
-   - Verify your API credentials are correct
-   - Ensure you're using the right environment (test vs production)
-
-3. **"No flights/hotels found"**
-   - Check that airport/city codes are valid IATA codes
-   - Verify dates are in the future and in YYYY-MM-DD format
-   - Try broader search criteria
-
-4. **Claude Desktop not recognizing the server**
-   - Ensure the path in `claude_desktop_config.json` is absolute
-   - Check that the server builds successfully (`npm run build`)
-   - Restart Claude Desktop after configuration changes
-
-### Debug Mode
-
-Enable debug logging by setting the environment variable:
+Run E2E tests:
 ```bash
-DEBUG=travel-mcp npm start
+npm run test:e2e
 ```
+
+### Building
+
+Build the TypeScript code:
+```bash
+npm run build
+```
+
+### Linting
+
+Run ESLint:
+```bash
+npm run lint
+```
+
+## API Coverage
+
+This MCP server implements the most important Coralogix APIs:
+
+- ✅ **Query APIs** - DataPrime, Lucene, background queries
+- ✅ **Alert Definitions** - Full CRUD operations
+- ✅ **Dashboard Management** - Create, read, update, delete
+- ✅ **Incident Management** - List, acknowledge, resolve, close  
+- ✅ **SLO Management** - Full lifecycle management
+- ✅ **Data Usage** - Usage analytics and quota monitoring
+- 🔄 **Additional APIs** - More APIs can be added based on requirements
+
+## Error Handling
+
+The server includes comprehensive error handling:
+
+- Authentication errors (401, 403)
+- Rate limiting (429) 
+- Bad requests (400)
+- Network timeouts
+- API-specific error responses
+
+All errors are returned with descriptive messages to help diagnose issues.
 
 ## Contributing
 
@@ -264,18 +346,16 @@ DEBUG=travel-mcp npm start
 2. Create a feature branch
 3. Make your changes
 4. Add tests for new functionality
-5. Submit a pull request
+5. Ensure all tests pass
+6. Submit a pull request
 
 ## License
 
-MIT License - see LICENSE file for details.
+[Add your license information here]
 
 ## Support
 
-- 📖 [Amadeus API Documentation](https://developers.amadeus.com/self-service)
-- 🔧 [Model Context Protocol Documentation](https://modelcontextprotocol.io)
-- 💬 [GitHub Issues](https://github.com/nitaiaharoni1/travel-mcp/issues)
-
----
-
-Built with ❤️ using the Model Context Protocol and Amadeus API. 
+For issues and questions:
+- Check the [Issues](./issues) page
+- Review the [Coralogix API Documentation](https://coralogix.com/docs/api/)
+- Contact the development team 
