@@ -34,7 +34,7 @@ export const ruleGroupsTools: Tool[] = [
   },
   {
     name: 'create_rule_group',
-    description: 'Create a new parsing rule group to process and extract fields from logs. Use this to: set up log parsing for new applications, extract custom fields from log messages, standardize log formats, and improve log searchability. Supports regex, JSON, and other parsing methods.',
+    description: 'Create a new parsing rule group to process and extract fields from logs. Use this to: set up log parsing for new applications, extract custom fields from log messages, standardize log formats, and improve log searchability. Supports regex, JSON, and other parsing methods. Note: For basic rule groups, you can start with empty ruleMatchers and ruleSubgroups arrays.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -44,7 +44,7 @@ export const ruleGroupsTools: Tool[] = [
         },
         description: {
           type: 'string',
-          description: 'Detailed description of what this rule group parses and extracts'
+          description: 'Detailed description of what this rule group parses and extracts. Optional but recommended.'
         },
         enabled: {
           type: 'boolean',
@@ -56,19 +56,37 @@ export const ruleGroupsTools: Tool[] = [
         },
         creator: {
           type: 'string',
-          description: 'Creator identifier for the rule group'
+          description: 'Creator identifier for the rule group. Optional, defaults to "MCP Server".'
         },
         order: {
           type: 'number',
-          description: 'Processing order for this rule group. Lower numbers process first.'
+          description: 'Processing order for this rule group. Lower numbers process first. Default is 1.'
         },
         ruleMatchers: {
           type: 'array',
-          description: 'Array of rule matching configurations that define when and how to apply parsing rules'
+          description: 'Array of rule matching configurations that define when and how to apply parsing rules. Can be empty array [] for basic rule groups.',
+          items: {
+            type: 'object',
+            description: 'Rule matcher configuration'
+          }
         },
         ruleSubgroups: {
           type: 'array',
-          description: 'Array of rule subgroups containing the actual parsing rules with regex patterns and field extractions'
+          description: 'Array of rule subgroups containing the actual parsing rules with regex patterns and field extractions. Can be empty array [] for basic rule groups.',
+          items: {
+            type: 'object',
+            description: 'Rule subgroup configuration'
+          }
+        },
+        teamId: {
+          type: 'object',
+          description: 'Team ID object with id field. Optional - if not provided, will use default team.',
+          properties: {
+            id: {
+              type: 'number',
+              description: 'Team ID number'
+            }
+          }
         }
       },
       required: ['name']
@@ -148,17 +166,40 @@ export async function handleRuleGroupsTool(request: CallToolRequest): Promise<an
       
     case 'create_rule_group':
       const createArgs = request.params.arguments as any;
-      const ruleGroupData = {
-        name: createArgs.name,
-        description: createArgs.description || '',
-        enabled: createArgs.enabled !== undefined ? createArgs.enabled : true,
-        hidden: createArgs.hidden || false,
-        creator: createArgs.creator || 'MCP Server',
-        order: createArgs.order || 1,
-        ruleMatchers: createArgs.ruleMatchers || [],
-        ruleSubgroups: createArgs.ruleSubgroups || []
-      };
-      return await client.createRuleGroup(ruleGroupData);
+      
+      // Validate required fields
+      if (!createArgs.name) {
+        throw new Error('Rule group name is required');
+      }
+      
+      try {
+        // Get team ID from company limits if not provided
+        let teamId = createArgs.teamId;
+        if (!teamId) {
+          const limits = await client.getRuleGroupLimits();
+          if (limits.companyId) {
+            teamId = { id: parseInt(limits.companyId) };
+          }
+        }
+        
+        const ruleGroupData = {
+          name: createArgs.name,
+          description: createArgs.description || '',
+          enabled: createArgs.enabled !== undefined ? createArgs.enabled : true,
+          hidden: createArgs.hidden || false,
+          creator: createArgs.creator || 'MCP Server',
+          order: createArgs.order || 1,
+          ruleMatchers: createArgs.ruleMatchers || [],
+          ruleSubgroups: createArgs.ruleSubgroups || [],
+          ...(teamId && { teamId })
+        };
+        
+        return await client.createRuleGroup(ruleGroupData);
+      } catch (error: any) {
+        // Provide helpful error message
+        const errorMsg = error.message || 'Unknown error';
+        throw new Error(`Failed to create rule group: ${errorMsg}. Note: Rule group creation may have API limitations. You can list existing rule groups and update them instead.`);
+      }
       
     case 'update_rule_group':
       const updateArgs = request.params.arguments as { groupId: string; ruleGroup: any };
