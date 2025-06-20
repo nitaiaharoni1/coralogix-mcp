@@ -471,6 +471,36 @@ export class CoralogixClient {
     return response.data;
   }
 
+  async createRuleGroup(ruleGroup: any): Promise<any> {
+    const response = await this.client.post('/mgmt/openapi/api/v1/rulegroups', ruleGroup);
+    return response.data;
+  }
+
+  async updateRuleGroup(groupId: string, ruleGroup: any): Promise<any> {
+    const response = await this.client.put(`/mgmt/openapi/api/v1/rulegroups/${groupId}`, ruleGroup);
+    return response.data;
+  }
+
+  async deleteRuleGroup(groupId: string): Promise<any> {
+    const response = await this.client.delete(`/mgmt/openapi/api/v1/rulegroups/${groupId}`);
+    return response.data;
+  }
+
+  async setRuleGroupActive(groupId: string, active: boolean): Promise<any> {
+    // Get the current rule group first
+    const currentRuleGroup = await this.getRuleGroup(groupId);
+    
+    // Update the enabled status
+    const updatedRuleGroup = {
+      ...currentRuleGroup.ruleGroup,
+      enabled: active
+    };
+    
+    // Update the rule group
+    const response = await this.updateRuleGroup(groupId, updatedRuleGroup);
+    return response;
+  }
+
   async getRuleGroupLimits(): Promise<any> {
     const response = await this.client.post('/mgmt/openapi/api/v1/rulegroups/company-limits', {});
     return response.data;

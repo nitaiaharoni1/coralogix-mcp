@@ -146,6 +146,32 @@ export async function handleRuleGroupsTool(request: CallToolRequest): Promise<an
       const { groupId } = request.params.arguments as { groupId: string };
       return await client.getRuleGroup(groupId);
       
+    case 'create_rule_group':
+      const createArgs = request.params.arguments as any;
+      const ruleGroupData = {
+        name: createArgs.name,
+        description: createArgs.description || '',
+        enabled: createArgs.enabled !== undefined ? createArgs.enabled : true,
+        hidden: createArgs.hidden || false,
+        creator: createArgs.creator || 'MCP Server',
+        order: createArgs.order || 1,
+        ruleMatchers: createArgs.ruleMatchers || [],
+        ruleSubgroups: createArgs.ruleSubgroups || []
+      };
+      return await client.createRuleGroup(ruleGroupData);
+      
+    case 'update_rule_group':
+      const updateArgs = request.params.arguments as { groupId: string; ruleGroup: any };
+      return await client.updateRuleGroup(updateArgs.groupId, updateArgs.ruleGroup);
+      
+    case 'delete_rule_group':
+      const deleteArgs = request.params.arguments as { groupId: string };
+      return await client.deleteRuleGroup(deleteArgs.groupId);
+      
+    case 'set_rule_group_active':
+      const activeArgs = request.params.arguments as { groupId: string; active: boolean };
+      return await client.setRuleGroupActive(activeArgs.groupId, activeArgs.active);
+      
     case 'get_rule_group_limits':
       return await client.getRuleGroupLimits();
       
