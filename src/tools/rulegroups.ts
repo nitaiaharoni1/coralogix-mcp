@@ -94,17 +94,70 @@ export const ruleGroupsTools: Tool[] = [
   },
   {
     name: 'update_rule_group',
-    description: 'Update an existing parsing rule group configuration. Use this to: modify parsing logic and patterns, add or remove parsing rules, change rule order and conditions, and optimize parsing performance. Requires complete rule group configuration.',
+    description: 'Update an existing parsing rule group configuration. Use this to: modify parsing logic and patterns, add or remove parsing rules, change rule order and conditions, and optimize parsing performance. Perfect for adding sensitive data sanitization rules like hiding passwords, tokens, credit cards, emails, etc.',
     inputSchema: {
       type: 'object',
       properties: {
         groupId: {
           type: 'string',
-          description: 'The unique identifier of the rule group to update'
+          description: 'The unique identifier of the rule group to update (get from list_rule_groups)'
         },
         ruleGroup: {
           type: 'object',
-          description: 'Complete rule group configuration with all properties. Use get_rule_group first to get current config, then modify as needed.'
+          description: 'Complete rule group configuration. IMPORTANT: Use get_rule_group first to get current config, then modify as needed. For sensitive data sanitization, add rules with replaceParameters to mask sensitive data.',
+          properties: {
+            name: { type: 'string', description: 'Rule group name' },
+            description: { type: 'string', description: 'Rule group description' },
+            enabled: { type: 'boolean', description: 'Whether rule group is active' },
+            hidden: { type: 'boolean', description: 'Whether to hide in UI' },
+            creator: { type: 'string', description: 'Creator identifier' },
+            order: { type: 'number', description: 'Processing order' },
+            ruleMatchers: {
+              type: 'array',
+              description: 'Conditions for when to apply rules (e.g., subsystemName filter)',
+              items: { type: 'object' }
+            },
+            ruleSubgroups: {
+              type: 'array',
+              description: 'Groups of parsing/replacement rules. For sensitive data: use replaceParameters with regex patterns',
+              items: {
+                type: 'object',
+                properties: {
+                  rules: {
+                    type: 'array',
+                    description: 'Individual parsing/replacement rules',
+                    items: {
+                      type: 'object',
+                      properties: {
+                        name: { type: 'string', description: 'Rule name (e.g., "Hide Passwords")' },
+                        description: { type: 'string', description: 'Rule description' },
+                        sourceField: { type: 'string', description: 'Source field to process (usually "text")' },
+                        parameters: {
+                          type: 'object',
+                          description: 'Rule parameters - use replaceParameters for sensitive data masking',
+                          properties: {
+                            replaceParameters: {
+                              type: 'object',
+                              description: 'Replace sensitive data with masked values',
+                              properties: {
+                                destinationField: { type: 'string', description: 'Destination field (usually "text")' },
+                                rule: { type: 'string', description: 'Regex pattern to match sensitive data' },
+                                replaceNewVal: { type: 'string', description: 'Replacement value (e.g., "[REDACTED]", "***")' }
+                              }
+                            }
+                          }
+                        },
+                        enabled: { type: 'boolean', description: 'Whether rule is active' },
+                        order: { type: 'number', description: 'Rule processing order' }
+                      }
+                    }
+                  },
+                  enabled: { type: 'boolean', description: 'Whether subgroup is active' },
+                  order: { type: 'number', description: 'Subgroup processing order' }
+                }
+              }
+            }
+          }
         }
       },
       required: ['groupId', 'ruleGroup']
