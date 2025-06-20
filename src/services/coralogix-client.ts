@@ -472,8 +472,17 @@ export class CoralogixClient {
   }
 
   async createRuleGroup(ruleGroup: any): Promise<any> {
-    const response = await this.client.post('/mgmt/openapi/api/v1/rulegroups', ruleGroup);
-    return response.data;
+    try {
+      const response = await this.client.post('/mgmt/openapi/api/v1/rulegroups', ruleGroup);
+      return response.data;
+    } catch (error: any) {
+      // Enhance error message for rule group creation
+      if (error.response?.status === 400) {
+        const errorDetails = error.response.data?.message || error.response.data?.error || 'Invalid parameters';
+        throw new Error(`Failed to create rule group: ${errorDetails}. Please check the rule group structure and required fields.`);
+      }
+      throw this.handleError(error, 'Failed to create rule group');
+    }
   }
 
   async updateRuleGroup(groupId: string, ruleGroup: any): Promise<any> {
