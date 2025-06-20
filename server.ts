@@ -16,7 +16,12 @@
 
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js';
+import { 
+  CallToolRequestSchema, 
+  ListToolsRequestSchema,
+  ListResourcesRequestSchema,
+  ListPromptsRequestSchema 
+} from '@modelcontextprotocol/sdk/types.js';
 import { tools, handleTool } from './src/tools/index.js';
 import * as dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
@@ -38,12 +43,24 @@ const server = new Server({
 }, {
   capabilities: {
     tools: {},
+    resources: {},
+    prompts: {},
   },
 });
 
 // Handle list tools request
 server.setRequestHandler(ListToolsRequestSchema, async () => {
   return { tools: tools };
+});
+
+// Handle list resources request (required by MCP protocol)
+server.setRequestHandler(ListResourcesRequestSchema, async () => {
+  return { resources: [] };
+});
+
+// Handle list prompts request (required by MCP protocol)
+server.setRequestHandler(ListPromptsRequestSchema, async () => {
+  return { prompts: [] };
 });
 
 // Handle tool calls
