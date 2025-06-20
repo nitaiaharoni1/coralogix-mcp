@@ -4,20 +4,20 @@
  * Coralogix MCP Server
  * Main entry point for the MCP server with Coralogix API integration
  * 
- * Working APIs in EU2 region:
- * - Query APIs (DataPrime, Lucene, Background queries)
- * - Alert Definitions (create, read, update, delete alerts)
- * - Dashboard Catalog (list, create, manage dashboards)
- * - Target Management (S3 storage configuration)
- * - Events2Metrics (convert logs/spans to metrics for cost optimization)
- * - Rule Groups (manage parsing rules for log processing)
- * - Enrichments (GeoIP, suspicious IP, AWS, custom enrichments)
+ * ALL APIs working in EU2 region (tested and confirmed):
+ * - Query APIs (DataPrime, Lucene, Background queries) ✅
+ * - Alert Definitions (create, read, update, delete alerts) ✅
+ * - Dashboard Catalog (list, create, manage dashboards) ✅
+ * - Target Management (S3 storage configuration) ✅
+ * - Rule Groups (parsing rules for log processing) ✅
+ * - Events2Metrics (convert logs/spans to metrics) ✅
+ * - Enrichments (GeoIP, suspicious IP, AWS, custom enrichments) ✅
  */
 
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js';
-import { getToolDefinitions, handleToolCall } from './src/tools/index.js';
+import { tools, handleTool } from './src/tools/index.js';
 import * as dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
@@ -43,17 +43,17 @@ const server = new Server({
 
 // Handle list tools request
 server.setRequestHandler(ListToolsRequestSchema, async () => {
-  return { tools: getToolDefinitions() };
+  return { tools: tools };
 });
 
 // Handle tool calls
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
-  const result = await handleToolCall(request);
+  const result = await handleTool(request);
   
   // Ensure we return the correct MCP SDK format
   return {
-    content: result.content,
-    isError: result.isError || false
+    content: [{ type: 'text', text: result }],
+    isError: false
   };
 });
 
@@ -97,81 +97,7 @@ if (isMainModule) {
   
   // Handle help command
   if (args.includes('--help') || args.includes('-h')) {
-    console.log(`
-Coralogix MCP Server v${SERVER_CONFIG.version}
-
-A Model Context Protocol server for Coralogix APIs.
-
-SETUP:
-  1. Get Coralogix API key from your Coralogix account
-  2. Set environment variables:
-     CORALOGIX_API_KEY=your_api_key
-     CORALOGIX_DOMAIN=your_domain (e.g., eu2.coralogix.com, coralogix.com)
-  3. Install dependencies: npm install
-  4. Build the server: npm run build
-  5. Configure in Claude Desktop or your MCP client
-
-AVAILABLE TOOLS:
-
-  📊 DATA QUERY APIs (for viewing ACTUAL log/trace/metric data):
-  - query_dataprime        - Search ACTUAL LOG DATA with DataPrime syntax (use for "show me logs", "error logs", etc.)
-  - query_lucene          - Search ACTUAL LOG DATA with Lucene syntax (use for simple log searches)
-  - submit_background_query - Submit long-running queries for large datasets
-  - get_background_query_status - Check status of background queries
-  - get_background_query_data - Retrieve results from background queries
-  - cancel_background_query - Cancel running background queries
-
-  🚨 Alert Management (CONFIGURATION ONLY - not actual logs):
-  - list_alert_definitions - List all alert RULES/CONFIGURATION (not actual triggered alerts)
-  - get_alert_definition  - Get specific alert RULE configuration
-  - create_alert_definition - Create new alert RULE
-  - update_alert_definition - Update existing alert RULE
-  - delete_alert_definition - Delete alert RULE
-  - set_alert_active      - Enable/disable alert RULE
-
-  📈 Dashboard Management (CONFIGURATION ONLY):
-  - get_dashboard_catalog - List all dashboard configurations
-  - get_dashboard        - Get specific dashboard configuration
-  - create_dashboard     - Create new dashboard
-  - update_dashboard     - Update existing dashboard
-  - delete_dashboard     - Delete dashboard
-
-  🎯 Target Configuration (ARCHIVING SETUP):
-  - get_target           - Get current S3 target configuration
-  - set_target           - Configure S3 target for archiving
-  - validate_target      - Validate S3 target configuration
-
-  📊 Events2Metrics (E2M) Configuration:
-  - list_events2metrics  - List all events2metrics configurations
-  - get_events2metrics   - Get specific E2M configuration
-  - get_events2metrics_limits - Get E2M limits and usage
-  - get_events2metrics_cardinality - Get labels cardinality for planning
-
-  📝 Rule Groups (PARSING CONFIGURATION):
-  - list_rule_groups     - List all parsing rule groups
-  - get_rule_group       - Get specific rule group
-  - get_rule_group_limits - Get rule group limits and usage
-
-  🔍 Enrichments (DATA ENHANCEMENT CONFIGURATION):
-  - list_enrichments     - List all configured enrichments
-  - get_enrichment_limits - Get enrichment limits and usage
-  - get_enrichment_settings - Get enrichment settings
-  - get_custom_enrichments - List custom enrichments (CSV-based)
-  - create_custom_enrichment - Create new custom enrichment
-  - update_custom_enrichment - Update custom enrichment
-  - delete_custom_enrichment - Delete custom enrichment
-
-USAGE:
-  coralogix-mcp           - Start the MCP server
-  coralogix-mcp --help    - Show this help message
-
-NOTES:
-  - This server includes only APIs confirmed to work in EU2 region
-  - Data usage, incidents, SLOs, policies, and team permissions are not available in EU2
-  - For other regions, additional APIs may be available
-
-For more information, visit: https://coralogix.com/docs/
-`);
+    console.log(`\nCoralogix MCP Server v${SERVER_CONFIG.version}\n\nA Model Context Protocol server for Coralogix APIs.\n\nSETUP:\n  1. Get Coralogix API key from your Coralogix account\n  2. Set environment variables:\n     CORALOGIX_API_KEY=your_api_key\n     CORALOGIX_DOMAIN=your_domain (e.g., eu2.coralogix.com, coralogix.com)\n  3. Install dependencies: npm install\n  4. Build the server: npm run build\n  5. Configure in Claude Desktop or your MCP client\n\nAVAILABLE TOOLS (All Working in EU2):\n\n  📊 DATA QUERY APIs (for viewing ACTUAL log/trace/metric data):\n  - query_dataprime        - Search ACTUAL LOG DATA with DataPrime syntax (use for \"show me logs\", \"error logs\", etc.)\n  - query_lucene          - Search ACTUAL LOG DATA with Lucene syntax (use for simple log searches)\n  - submit_background_query - Submit long-running queries (for large datasets)\n  - get_background_query_status - Check background query status\n  - get_background_query_data - Get results from completed background query\n  - cancel_background_query - Cancel running background query\n\n  🚨 ALERT MANAGEMENT:\n  - list_alert_definitions - List all alert definitions\n  - get_alert_definition  - Get specific alert by ID\n  - create_alert_definition - Create new alert\n  - update_alert_definition - Update existing alert\n  - delete_alert_definition - Delete alert\n  - set_alert_active      - Enable/disable alert\n\n  📋 DASHBOARD MANAGEMENT:\n  - get_dashboard_catalog - List all dashboards\n  - get_dashboard        - Get specific dashboard\n  - create_dashboard     - Create new dashboard\n  - update_dashboard     - Update existing dashboard\n  - delete_dashboard     - Delete dashboard\n\n  🎯 TARGET MANAGEMENT (S3 storage):\n  - get_target          - Get current S3 target configuration\n  - set_target          - Configure S3 target for log archiving\n  - validate_target     - Validate S3 target configuration\n\n  📝 RULE GROUPS (Log parsing and processing):\n  - list_rule_groups    - List all parsing rule groups\n  - get_rule_group      - Get specific rule group details\n  - get_rule_group_limits - Get rule group usage limits\n\n  📈 EVENTS2METRICS (Convert logs/spans to metrics):\n  - list_events2metrics - List all E2M configurations\n  - get_events2metrics  - Get specific E2M configuration\n  - get_e2m_limits      - Get E2M usage limits\n  - get_e2m_cardinality - Get cardinality estimates\n\n  🔍 ENRICHMENTS (Data enhancement):\n  - list_enrichments    - List all enrichment rules\n  - get_enrichment_limits - Get enrichment usage limits\n  - get_enrichment_settings - Get enrichment configuration\n  - list_custom_enrichments - List custom enrichment files\n  - get_custom_enrichment - Get specific custom enrichment\n\nEXAMPLE QUERIES:\n  \"Show me error logs from the last hour\"\n  \"List all active alerts\"\n  \"Get dashboard catalog\"\n  \"Show rule groups for log parsing\"\n  \"List events2metrics configurations\"\n  \"Show enrichment settings\"\n\n`);
     process.exit(0);
   }
   

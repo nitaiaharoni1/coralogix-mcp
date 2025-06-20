@@ -391,17 +391,17 @@ export class CoralogixClient {
   // ============================================================================
 
   async listEvents2Metrics(): Promise<any> {
-    const response = await this.client.get('/api/v2/events2metrics');
+    const response = await this.client.get('/mgmt/openapi/api/v2/events2metrics');
     return response.data;
   }
 
   async getEvents2Metrics(id: string): Promise<any> {
-    const response = await this.client.get(`/api/v2/events2metrics/${id}`);
+    const response = await this.client.get(`/mgmt/openapi/api/v2/events2metrics/${id}`);
     return response.data;
   }
 
   async getEvents2MetricsLimits(): Promise<any> {
-    const response = await this.client.get('/api/v2/events2metrics/limits');
+    const response = await this.client.get('/mgmt/openapi/api/v2/events2metrics/limits');
     return response.data;
   }
 
@@ -452,7 +452,7 @@ export class CoralogixClient {
     }
 
     const queryString = params.toString();
-    const url = `/api/v2/events2metrics/labels_cardinality${queryString ? `?${queryString}` : ''}`;
+    const url = `/mgmt/openapi/api/v2/events2metrics/labels_cardinality${queryString ? `?${queryString}` : ''}`;
     const response = await this.client.get(url);
     return response.data;
   }
@@ -462,17 +462,17 @@ export class CoralogixClient {
   // ============================================================================
 
   async listRuleGroups(): Promise<any> {
-    const response = await this.client.get('/api/v1/rulegroups');
+    const response = await this.client.get('/mgmt/openapi/api/v1/rulegroups');
     return response.data;
   }
 
   async getRuleGroup(groupId: string): Promise<any> {
-    const response = await this.client.get(`/api/v1/rulegroups/${groupId}`);
+    const response = await this.client.get(`/mgmt/openapi/api/v1/rulegroups/${groupId}`);
     return response.data;
   }
 
   async getRuleGroupLimits(): Promise<any> {
-    const response = await this.client.post('/api/v1/rulegroups/company-limits', {});
+    const response = await this.client.post('/mgmt/openapi/api/v1/rulegroups/company-limits', {});
     return response.data;
   }
 
@@ -481,27 +481,27 @@ export class CoralogixClient {
   // ============================================================================
 
   async listEnrichments(): Promise<any> {
-    const response = await this.client.get('/enrichments');
+    const response = await this.client.get('/mgmt/openapi/enrichments');
     return response.data;
   }
 
   async getEnrichmentLimits(): Promise<any> {
-    const response = await this.client.get('/enrichments/limit');
+    const response = await this.client.get('/mgmt/openapi/enrichments/limit');
     return response.data;
   }
 
   async getEnrichmentSettings(): Promise<any> {
-    const response = await this.client.get('/enrichments/settings');
+    const response = await this.client.get('/mgmt/openapi/enrichments/settings');
     return response.data;
   }
 
   async listCustomEnrichments(): Promise<any> {
-    const response = await this.client.get('/v1/custom_enrichment');
+    const response = await this.client.get('/mgmt/openapi/v1/custom_enrichment');
     return response.data;
   }
 
   async getCustomEnrichment(id: number): Promise<any> {
-    const response = await this.client.get(`/v1/custom_enrichment/${id}`);
+    const response = await this.client.get(`/mgmt/openapi/v1/custom_enrichment/${id}`);
     return response.data;
   }
 
