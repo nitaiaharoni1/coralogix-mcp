@@ -65,13 +65,29 @@ server.setRequestHandler(ListPromptsRequestSchema, async () => {
 
 // Handle tool calls
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
-  const result = await handleTool(request);
-  
-  // Ensure we return the correct MCP SDK format
-  return {
-    content: [{ type: 'text', text: result }],
-    isError: false
-  };
+  try {
+    const result = await handleTool(request);
+    
+    // Return the result directly - handleTool already returns the correct format
+    // If result is a string, wrap it; if it's already an object, return as-is
+    if (typeof result === 'string') {
+      return {
+        content: [{ type: 'text', text: result }],
+        isError: false
+      };
+    } else {
+      // Result is already a properly formatted response object
+      return {
+        content: [{ type: 'text', text: JSON.stringify(result) }],
+        isError: false
+      };
+    }
+  } catch (error: any) {
+    return {
+      content: [{ type: 'text', text: `Error: ${error.message}` }],
+      isError: true
+    };
+  }
 });
 
 // Main server function
