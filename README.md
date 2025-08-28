@@ -2,6 +2,70 @@
 
 A Model Context Protocol (MCP) server for integrating with Coralogix APIs. This server provides comprehensive tools for querying logs, managing alerts, dashboards, incidents, SLOs, and monitoring data usage.
 
+## Quick Start
+
+```bash
+# Run immediately with npx (no installation required)
+npx coralogix-mcp
+```
+
+Set your environment variables:
+```bash
+export CORALOGIX_API_KEY=your_api_key_here
+export CORALOGIX_DOMAIN=your_domain_here
+```
+
+## Configuration for AI Clients
+
+### Claude Desktop
+
+Add to your `claude_desktop_config.json`:
+
+**Location:**
+- macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
+- Windows: `%APPDATA%\Claude\claude_desktop_config.json`
+
+```json
+{
+  "mcpServers": {
+    "coralogix-mcp": {
+      "command": "npx",
+      "args": ["coralogix-mcp"],
+      "env": {
+        "CORALOGIX_API_KEY": "your_api_key_here",
+        "CORALOGIX_DOMAIN": "your_domain_here"
+      }
+    }
+  }
+}
+```
+
+### Cursor IDE
+
+Add to your MCP configuration file at `~/.cursor/mcp.json`:
+
+```json
+{
+  "mcpServers": {
+    "coralogix-mcp": {
+      "command": "npx",
+      "args": ["coralogix-mcp"],
+      "env": {
+        "CORALOGIX_API_KEY": "your_api_key_here",
+        "CORALOGIX_DOMAIN": "your_domain_here"
+      }
+    }
+  }
+}
+```
+
+**Note:** If using nvm, you may need to specify the full path to npx:
+```json
+"command": "/Users/yourusername/.nvm/versions/node/v20.19.0/bin/npx"
+```
+
+Restart your AI client after configuration changes.
+
 ## Features
 
 ### 🔍 Query & Search Tools
@@ -41,9 +105,17 @@ A Model Context Protocol (MCP) server for integrating with Coralogix APIs. This 
 
 ## Installation
 
+### Option 1: Install from npm (Recommended)
+
+```bash
+npm install -g coralogix-mcp
+```
+
+### Option 2: Install from source
+
 1. Clone the repository:
 ```bash
-git clone <repository-url>
+git clone https://github.com/nitaiaharoni1/coralogix-mcp.git
 cd coralogix-mcp
 ```
 
@@ -52,8 +124,21 @@ cd coralogix-mcp
 npm install
 ```
 
-3. Set up environment variables:
-   ```bash
+3. Build the project:
+```bash
+npm run build
+```
+
+4. Start the server:
+```bash
+npm start
+```
+
+## Configuration
+
+Set up environment variables by creating a `.env` file:
+
+```bash
 cp env.example .env
 ```
 
@@ -63,13 +148,21 @@ CORALOGIX_API_KEY=your_api_key_here
 CORALOGIX_DOMAIN=your_domain_here
 ```
 
-4. Build the project:
-   ```bash
-npm run build
-```
+## Usage
 
-5. Start the server:
+You can run the MCP server in several ways:
+
 ```bash
+# Run directly with npx (no installation required)
+npx coralogix-mcp
+
+# If installed globally
+coralogix-mcp
+
+# If installed locally in a project
+npx coralogix-mcp
+
+# Or if running from source
 npm start
 ```
 
@@ -351,11 +444,11 @@ All errors are returned with descriptive messages to help diagnose issues.
 
 ## License
 
-[Add your license information here]
+MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## Support
 
 For issues and questions:
-- Check the [Issues](./issues) page
+- Check the [Issues](https://github.com/nitaiaharoni1/coralogix-mcp/issues) page
 - Review the [Coralogix API Documentation](https://coralogix.com/docs/api/)
 - Contact the development team 
