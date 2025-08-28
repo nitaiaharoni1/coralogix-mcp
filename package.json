@@ -1,6 +1,6 @@
 {
   "name": "coralogix-mcp",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Model Context Protocol server for Coralogix observability platform - query logs, metrics, traces, manage alerts, and access all Coralogix APIs",
   "type": "module",
   "main": "dist/server.js",
