@@ -1,7 +1,7 @@
 {
   "name": "coralogix-mcp",
-  "version": "1.0.2",
-  "description": "Model Context Protocol server for Coralogix observability platform - query logs, metrics, traces, manage alerts, and access all Coralogix APIs",
+  "version": "2.0.0",
+  "description": "Comprehensive Model Context Protocol server for Coralogix observability platform - 55+ tools for logs, metrics, traces, alerts, parsing rules, and complete API access",
   "type": "module",
   "main": "dist/server.js",
   "types": "dist/server.d.ts",
@@ -36,11 +36,17 @@
     "traces",
     "monitoring",
     "alerts",
+    "parsing-rules",
+    "log-parsing",
     "dataprime",
     "lucene",
     "claude",
     "ai",
-    "typescript"
+    "typescript",
+    "enterprise",
+    "analytics",
+    "siem",
+    "devops"
   ],
   "author": "Nitai Aharoni <nitaiaharoni1@gmail.com>",
   "license": "MIT",
