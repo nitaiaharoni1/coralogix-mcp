@@ -11,6 +11,7 @@ import { targetsTools, handleTargetsTools } from './targets.js';
 import { ruleGroupsTools, handleRuleGroupsTool } from './rulegroups.js';
 import { events2metricsTools, handleEvents2MetricsTool } from './events2metrics.js';
 import { enrichmentsTools, handleEnrichmentsTool } from './enrichments.js';
+import { parsingRulesTools, handleParsingRulesTool } from './parsing-rules.js';
 
 // Export all available tools
 export const tools: Tool[] = [
@@ -21,6 +22,7 @@ export const tools: Tool[] = [
   ...ruleGroupsTools,
   ...events2metricsTools,
   ...enrichmentsTools,
+  ...parsingRulesTools,
 ];
 
 /**
@@ -60,6 +62,10 @@ export async function handleTool(request: CallToolRequest): Promise<any> {
   
   if (name.includes('enrichment')) {
     return handleEnrichmentsTool(request);
+  }
+  
+  if (name.includes('parsing_rule') || name.includes('parsing-rule')) {
+    return handleParsingRulesTool(name, args || {});
   }
   
   throw new Error(`Unknown tool: ${name}`);

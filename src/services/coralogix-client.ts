@@ -21,6 +21,16 @@ import {
   CreateAlertDefResponse,
   GetAlertDefResponse,
   ListAlertDefsResponse,
+  ListAlertDefsRequest,
+  ListAlertDefsWithFilterResponse,
+  GetAlertEventResponse,
+  AlertEventStatistics,
+  RuleGroup,
+  CreateRuleGroupRequest,
+  GetAllRulesResponse,
+  ExportRulesRequest,
+  LegacyRuleGroup,
+  LegacyRule,
   Dashboard,
   CreateDashboardRequest,
   CreateDashboardResponse,
@@ -177,7 +187,7 @@ export class CoralogixClient {
   // ========== ALERT DEFINITIONS API ==========
 
   /**
-   * List all alert definitions
+   * List all alert definitions (simple)
    */
   async listAlertDefs(): Promise<ListAlertDefsResponse> {
     try {
@@ -187,6 +197,94 @@ export class CoralogixClient {
       return response.data;
     } catch (error) {
       throw this.handleError(error, 'Failed to list alert definitions');
+    }
+  }
+
+  /**
+   * List alert definitions with advanced filtering and pagination
+   */
+  async listAlertDefsWithFilter(request?: ListAlertDefsRequest): Promise<ListAlertDefsWithFilterResponse> {
+    try {
+      const queryParams = new URLSearchParams();
+      
+      if (request?.queryFilter) {
+        const filter = request.queryFilter;
+        
+        // Name filter
+        if (filter.nameFilter) {
+          filter.nameFilter.name.forEach(name => 
+            queryParams.append('queryFilter.nameFilter.name', name)
+          );
+          queryParams.append('queryFilter.nameFilter.matcher', filter.nameFilter.matcher);
+        }
+        
+        // Type filter
+        if (filter.typeFilter) {
+          filter.typeFilter.type.forEach(type => 
+            queryParams.append('queryFilter.typeFilter.type', type)
+          );
+          queryParams.append('queryFilter.typeFilter.matcher', filter.typeFilter.matcher);
+        }
+        
+        // Entity labels filter
+        if (filter.entityLabelsFilter) {
+          if (filter.entityLabelsFilter.entityLabels) {
+            queryParams.append('queryFilter.entityLabelsFilter.entityLabels', filter.entityLabelsFilter.entityLabels);
+          }
+          queryParams.append('queryFilter.entityLabelsFilter.valuesOperator', filter.entityLabelsFilter.valuesOperator);
+        }
+        
+        // Priority filter
+        if (filter.priorityFilter) {
+          filter.priorityFilter.priority.forEach(priority => 
+            queryParams.append('queryFilter.priorityFilter.priority', priority)
+          );
+          queryParams.append('queryFilter.priorityFilter.matcher', filter.priorityFilter.matcher);
+        }
+        
+        // Enabled filter
+        if (filter.enabledFilter) {
+          queryParams.append('queryFilter.enabledFilter.enabled', filter.enabledFilter.enabled.toString());
+        }
+        
+        // Modified time range filter
+        if (filter.modifiedTimeRangeFilter) {
+          queryParams.append('queryFilter.modifiedTimeRangeFilter.modifiedAtRange.startTime', filter.modifiedTimeRangeFilter.modifiedAtRange.startTime);
+          queryParams.append('queryFilter.modifiedTimeRangeFilter.modifiedAtRange.endTime', filter.modifiedTimeRangeFilter.modifiedAtRange.endTime);
+        }
+        
+        // Last triggered time range filter
+        if (filter.lastTriggeredTimeRangeFilter) {
+          queryParams.append('queryFilter.lastTriggeredTimeRangeFilter.lastTriggeredAtRange.startTime', filter.lastTriggeredTimeRangeFilter.lastTriggeredAtRange.startTime);
+          queryParams.append('queryFilter.lastTriggeredTimeRangeFilter.lastTriggeredAtRange.endTime', filter.lastTriggeredTimeRangeFilter.lastTriggeredAtRange.endTime);
+        }
+        
+        // SLO filter
+        if (filter.typeSpecificFilter?.sloFilter) {
+          filter.typeSpecificFilter.sloFilter.sloId.forEach(sloId => 
+            queryParams.append('queryFilter.typeSpecificFilter.sloFilter.sloId', sloId)
+          );
+          queryParams.append('queryFilter.typeSpecificFilter.sloFilter.matcher', filter.typeSpecificFilter.sloFilter.matcher);
+        }
+      }
+      
+      // Pagination
+      if (request?.pagination) {
+        if (request.pagination.pageSize) {
+          queryParams.append('pagination.pageSize', request.pagination.pageSize.toString());
+        }
+        if (request.pagination.pageToken) {
+          queryParams.append('pagination.pageToken', request.pagination.pageToken);
+        }
+      }
+
+      const queryString = queryParams.toString();
+      const url = `/mgmt/openapi/v3/alert-defs${queryString ? `?${queryString}` : ''}`;
+      
+      const response: AxiosResponse<ListAlertDefsWithFilterResponse> = await this.client.get(url);
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to list alert definitions with filter');
     }
   }
 
@@ -235,26 +333,104 @@ export class CoralogixClient {
   }
 
   /**
-   * Delete alert definition
+   * Delete alert definition (proper v3 endpoint)
    */
-  async deleteAlertDef(id: string): Promise<void> {
+  async deleteAlertDef(id: string): Promise<any> {
     try {
-      await this.client.delete(`/mgmt/openapi/v3/alert-defs/${id}`);
+      const response = await this.client.delete(`/mgmt/openapi/v3/alert-defs/${id}`);
+      return response.data;
     } catch (error) {
       throw this.handleError(error, 'Failed to delete alert definition');
     }
   }
 
   /**
-   * Enable/disable alert definition
+   * Enable/disable alert definition (proper v3 endpoint with query parameter)
    */
-  async setAlertDefActive(id: string, active: boolean): Promise<void> {
+  async setAlertDefActive(id: string, active: boolean): Promise<any> {
     try {
-      await this.client.post(
+      const response = await this.client.post(
         `/mgmt/openapi/v3/alert-defs/${id}:setActive?active=${active}`
       );
+      return response.data;
     } catch (error) {
       throw this.handleError(error, 'Failed to set alert definition active state');
+    }
+  }
+
+  /**
+   * Download alerts in bulk
+   */
+  async downloadAlerts(): Promise<any> {
+    try {
+      const response = await this.client.get('/mgmt/openapi/v3/alert-defs:download');
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to download alerts');
+    }
+  }
+
+  /**
+   * Get alert definition by alert version ID
+   */
+  async getAlertDefByVersionId(versionId: string): Promise<GetAlertDefResponse> {
+    try {
+      const response: AxiosResponse<GetAlertDefResponse> = await this.client.get(
+        `/mgmt/openapi/v3/alert-defs/by-version/${versionId}`
+      );
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to get alert definition by version ID');
+    }
+  }
+
+  // ========== ALERT EVENTS API ==========
+
+  /**
+   * Get alert event by ID
+   */
+  async getAlertEvent(eventId: string): Promise<GetAlertEventResponse> {
+    try {
+      const response: AxiosResponse<GetAlertEventResponse> = await this.client.get(
+        `/mgmt/openapi/v2/alert-events/${eventId}`
+      );
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to get alert event');
+    }
+  }
+
+  /**
+   * Get alert events statistics
+   */
+  async getAlertEventsStatistics(params?: {
+    startTime?: string;
+    endTime?: string;
+    alertDefIds?: string[];
+    priorities?: string[];
+    status?: string[];
+  }): Promise<AlertEventStatistics> {
+    try {
+      const queryParams = new URLSearchParams();
+      if (params?.startTime) queryParams.append('startTime', params.startTime);
+      if (params?.endTime) queryParams.append('endTime', params.endTime);
+      if (params?.alertDefIds) {
+        params.alertDefIds.forEach(id => queryParams.append('alertDefIds', id));
+      }
+      if (params?.priorities) {
+        params.priorities.forEach(priority => queryParams.append('priorities', priority));
+      }
+      if (params?.status) {
+        params.status.forEach(s => queryParams.append('status', s));
+      }
+
+      const queryString = queryParams.toString();
+      const url = `/mgmt/openapi/v2/alert-events/statistics${queryString ? `?${queryString}` : ''}`;
+      
+      const response: AxiosResponse<AlertEventStatistics> = await this.client.get(url);
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to get alert events statistics');
     }
   }
 
@@ -564,6 +740,205 @@ export class CoralogixClient {
   async deleteCustomEnrichment(enrichmentId: string): Promise<any> {
     const response = await this.client.delete(`/mgmt/openapi/v1/custom_enrichment/${enrichmentId}`);
     return response.data;
+  }
+
+  // ============================================================================
+  // PARSING RULES METHODS
+  // ============================================================================
+
+  /**
+   * Create a new parsing rule group with rules
+   */
+  async createParsingRuleGroup(request: CreateRuleGroupRequest): Promise<RuleGroup> {
+    try {
+      const response: AxiosResponse<RuleGroup> = await this.client.post(
+        '/api/v1/external/rule/rule-set',
+        request
+      );
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to create parsing rule group');
+    }
+  }
+
+  /**
+   * Get all parsing rule groups
+   */
+  async getAllParsingRules(): Promise<GetAllRulesResponse> {
+    try {
+      const response: AxiosResponse<GetAllRulesResponse> = await this.client.get(
+        '/api/v1/external/rules'
+      );
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to get all parsing rules');
+    }
+  }
+
+  /**
+   * Get a specific parsing rule group by ID
+   */
+  async getParsingRuleGroup(groupId: string): Promise<RuleGroup> {
+    try {
+      const response: AxiosResponse<RuleGroup> = await this.client.get(
+        `/api/v1/external/rule/rule-set/${groupId}`
+      );
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to get parsing rule group');
+    }
+  }
+
+  /**
+   * Update a parsing rule group
+   */
+  async updateParsingRuleGroup(ruleGroup: RuleGroup): Promise<RuleGroup> {
+    try {
+      const response: AxiosResponse<RuleGroup> = await this.client.put(
+        '/api/v1/external/rule/rule-set',
+        ruleGroup
+      );
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to update parsing rule group');
+    }
+  }
+
+  /**
+   * Delete a parsing rule group
+   */
+  async deleteParsingRuleGroup(groupId: string): Promise<void> {
+    try {
+      await this.client.delete(`/api/v1/external/rule/rule-set/${groupId}`);
+    } catch (error) {
+      throw this.handleError(error, 'Failed to delete parsing rule group');
+    }
+  }
+
+  /**
+   * Delete a specific parsing rule
+   */
+  async deleteParsingRule(ruleId: string, groupId: string): Promise<void> {
+    try {
+      await this.client.delete(`/api/v1/external/rule/${ruleId}/group/${groupId}`);
+    } catch (error) {
+      throw this.handleError(error, 'Failed to delete parsing rule');
+    }
+  }
+
+  /**
+   * Export/import rules between teams
+   */
+  async exportRules(request: ExportRulesRequest): Promise<any> {
+    try {
+      const response = await this.client.post('/api/v1/external/rules/export', request);
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to export rules');
+    }
+  }
+
+  // Legacy API methods
+  /**
+   * Create a legacy rule group
+   */
+  async createLegacyRuleGroup(request: LegacyRuleGroup): Promise<LegacyRuleGroup> {
+    try {
+      const response: AxiosResponse<LegacyRuleGroup> = await this.client.post(
+        '/api/v1/external/group',
+        request
+      );
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to create legacy rule group');
+    }
+  }
+
+  /**
+   * Get legacy rule group
+   */
+  async getLegacyRuleGroup(groupId: string): Promise<LegacyRuleGroup> {
+    try {
+      const response: AxiosResponse<LegacyRuleGroup> = await this.client.get(
+        `/api/v1/external/group/${groupId}`
+      );
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to get legacy rule group');
+    }
+  }
+
+  /**
+   * Update legacy rule group
+   */
+  async updateLegacyRuleGroup(groupId: string, request: LegacyRuleGroup): Promise<LegacyRuleGroup> {
+    try {
+      const response: AxiosResponse<LegacyRuleGroup> = await this.client.put(
+        `/api/v1/external/group/${groupId}`,
+        request
+      );
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to update legacy rule group');
+    }
+  }
+
+  /**
+   * Delete legacy rule group
+   */
+  async deleteLegacyRuleGroup(groupId: string): Promise<void> {
+    try {
+      await this.client.delete(`/api/v1/external/group/${groupId}`);
+    } catch (error) {
+      throw this.handleError(error, 'Failed to delete legacy rule group');
+    }
+  }
+
+  /**
+   * Create a legacy parsing rule
+   */
+  async createLegacyRule(groupId: string, request: LegacyRule): Promise<any> {
+    try {
+      const response = await this.client.post(`/api/v1/external/rule/${groupId}`, request);
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to create legacy rule');
+    }
+  }
+
+  /**
+   * Get legacy parsing rule
+   */
+  async getLegacyRule(ruleId: string, groupId: string): Promise<any> {
+    try {
+      const response = await this.client.get(`/api/v1/external/rule/${ruleId}/group/${groupId}`);
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to get legacy rule');
+    }
+  }
+
+  /**
+   * Update legacy parsing rule
+   */
+  async updateLegacyRule(ruleId: string, groupId: string, request: Partial<LegacyRule>): Promise<any> {
+    try {
+      const response = await this.client.put(`/api/v1/external/rule/${ruleId}/group/${groupId}`, request);
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error, 'Failed to update legacy rule');
+    }
+  }
+
+  /**
+   * Delete legacy parsing rule
+   */
+  async deleteLegacyRule(ruleId: string, groupId: string): Promise<void> {
+    try {
+      await this.client.delete(`/api/v1/external/rule/${ruleId}/group/${groupId}`);
+    } catch (error) {
+      throw this.handleError(error, 'Failed to delete legacy rule');
+    }
   }
 }
 
