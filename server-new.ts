@@ -70,8 +70,8 @@ server.tool(
       const queryRequest = {
         query: args.query,
         metadata: {
-          tier: args.tier as any || 'TIER_FREQUENT_SEARCH',
-          syntax: 'QUERY_SYNTAX_DATAPRIME' as any,
+          tier: args.tier || 'TIER_FREQUENT_SEARCH',
+          syntax: 'QUERY_SYNTAX_DATAPRIME',
           limit: args.limit || 100,
           startDate: args.startDate,
           endDate: args.endDate
@@ -135,8 +135,8 @@ server.tool(
       const queryRequest = {
         query: args.query,
         metadata: {
-          tier: args.tier as any || 'TIER_FREQUENT_SEARCH',
-          syntax: 'QUERY_SYNTAX_LUCENE' as any,
+          tier: args.tier || 'TIER_FREQUENT_SEARCH',
+          syntax: 'QUERY_SYNTAX_LUCENE',
           limit: args.limit || 100,
           startDate: args.startDate,
           endDate: args.endDate

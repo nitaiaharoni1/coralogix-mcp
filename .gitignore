@@ -46,6 +46,12 @@ coverage/
 # Test reports and cache
 test-reports/
 .jest-cache/
+jest_html_reporters.html
+
+# Temporary development files
+asd.*
+temp.*
+tmp.*
 
 # Dependency directories
 jspm_packages/

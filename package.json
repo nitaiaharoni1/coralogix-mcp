@@ -1,6 +1,6 @@
 {
   "name": "coralogix-mcp",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Model Context Protocol server for Coralogix observability platform - query logs, metrics, traces, manage alerts, and access all Coralogix APIs",
   "type": "module",
   "main": "dist/server.js",
@@ -9,7 +9,7 @@
     "coralogix-mcp": "dist/server.js"
   },
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && chmod +x dist/server.js",
     "build:watch": "tsc --watch",
     "start": "node dist/server.js",
     "dev": "ts-node --esm server.ts",
@@ -55,7 +55,8 @@
     "@modelcontextprotocol/sdk": "^1.12.0",
     "axios": "^1.9.0",
     "date-fns": "^3.6.0",
-    "dotenv": "^16.5.0"
+    "dotenv": "^16.5.0",
+    "zod": "^3.23.8"
   },
   "devDependencies": {
     "@jest/reporters": "^30.0.0-beta.3",
