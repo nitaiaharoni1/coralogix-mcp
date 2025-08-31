@@ -24,7 +24,7 @@
     "test:ci": "npm run build && jest tests/e2e --ci --coverage --maxWorkers=50% --reporters=default --reporters=jest-html-reporters",
     "clean": "rimraf dist coverage test-reports .jest-cache",
     "prepare": "husky",
-    "prepublishOnly": "npm run clean && npm run build && npm run test"
+    "prepublishOnly": "npm run clean && npm run build"
   },
   "keywords": [
     "mcp",
