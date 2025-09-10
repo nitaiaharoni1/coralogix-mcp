@@ -1,0 +1,14 @@
+# Testing what triggers git-secrets:
+
+# These should be fine:
+MIT
+ISC  
+BSD-3-Clause
+Apache-2.0
+integrity sha512 hash
+
+# These might trigger:
+API key patterns
+GitHub tokens
+cxup_fake123
+ghp_fake123456789012345678901234567890
