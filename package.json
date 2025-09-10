@@ -65,13 +65,17 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@commitlint/cli": "^19.8.1",
+    "@commitlint/config-conventional": "^19.8.1",
     "@jest/reporters": "^30.0.0-beta.3",
     "@types/jest": "^29.5.14",
     "@types/node": "^22.15.21",
     "@types/supertest": "^6.0.3",
+    "detect-secrets": "^1.0.6",
     "husky": "^9.1.7",
     "jest": "^29.7.0",
     "jest-html-reporters": "^3.1.7",
+    "lint-staged": "^16.1.6",
     "nodemon": "^3.0.0",
     "rimraf": "^5.0.10",
     "supertest": "^7.1.1",
@@ -81,5 +85,13 @@
   },
   "engines": {
     "node": ">=16.0.0"
+  },
+  "lint-staged": {
+    "*.{js,ts,json,md}": [
+      "git secrets --pre_commit_hook --"
+    ],
+    "*.{ts,js}": [
+      "echo 'Checking TypeScript files for secrets...'"
+    ]
   }
 }

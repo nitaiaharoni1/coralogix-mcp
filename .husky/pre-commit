@@ -1,0 +1,16 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# Run git-secrets scan
+echo "🔍 Scanning for secrets with git-secrets..."
+git secrets --pre_commit_hook -- "$@"
+
+# Additional secret patterns check
+echo "🔍 Checking for API key patterns..."
+if git diff --cached --name-only | xargs grep -l "cxup_\|ghp_\|sk-\|pk_\|AKIA\|-----BEGIN" 2>/dev/null; then
+  echo "❌ Potential secrets detected in staged files!"
+  echo "Please review the files above and remove any sensitive data."
+  exit 1
+fi
+
+echo "✅ No secrets detected!"
